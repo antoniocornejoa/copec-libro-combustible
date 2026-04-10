@@ -1,0 +1,13 @@
+{
+  "name": "copec-scraper",
+  "version": "1.0.0",
+  "description": "Automatización de extracción de transacciones desde Copec Empresa",
+  "scripts": {
+    "scrape": "node scraper.js",
+    "scrape:month": "node scraper.js --month",
+    "serve": "npx serve public -p 3000"
+  },
+  "dependencies": {
+    "playwright": "^1.45.0"
+  }
+}
