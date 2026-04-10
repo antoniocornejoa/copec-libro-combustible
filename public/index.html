@@ -290,7 +290,7 @@
           <th>Tipo Combustible</th>
           <th class="text-right">Monto Neto</th>
           <th class="text-right">IVA</th>
-          <th class="text-right">Imp. Recup. No Recuperable</th>
+          <th class="text-right">Imp. Específico</th>
           <th class="text-right">Monto Total</th>
           <th>Destino (CC)</th>
           <th>Destino (Emp)</th>
@@ -417,6 +417,10 @@
         const iva = montoTotal - baseImponible;
         const montoNeto = baseImponible - impEspecifico;
 
+        // Diesel = recuperable para empresas elegibles (construcción, transporte, etc.)
+        // Gasolinas = no recuperable
+        const esRecuperable = tipoCombustible.toUpperCase().includes('DIESEL');
+
         return {
           fecha: tx.fecha || tx.fechaTransaccion || d.fecha || '',
           factura: tx.nroDocumento || d.nroDocumento || d.folioDocumento || '',
@@ -425,7 +429,8 @@
           tipoCombustible: tipoCombustible,
           montoNeto: montoNeto,
           iva: iva,
-          impRecupNoRecuperable: impEspecifico,
+          impEspecifico: impEspecifico,
+          esRecuperable: esRecuperable,
           montoTotal: montoTotal,
           destinoCC: d.estacion || tx.estacion || '',
           destinoEmp: d.direccion || d.sucursal || '',
@@ -513,7 +518,7 @@
           <td><span class="badge ${getBadgeClass(r.tipoCombustible)}">${r.tipoCombustible}</span></td>
           <td class="text-right">${formatNumber(r.montoNeto, 0)}</td>
           <td class="text-right">${formatNumber(r.iva, 0)}</td>
-          <td class="text-right">${formatNumber(r.impRecupNoRecuperable, 0)}</td>
+          <td class="text-right">${formatNumber(r.impEspecifico, 0)} <span style="font-size:0.65rem;font-weight:600;color:${r.esRecuperable ? '#2e7d32' : '#c62828'}">${r.esRecuperable ? '(R)' : '(NR)'}</span></td>
           <td class="text-right"><strong>${formatNumber(r.montoTotal, 0)}</strong></td>
           <td>${r.destinoCC}</td>
           <td>${r.destinoEmp}</td>
@@ -530,7 +535,7 @@
       const totLitros = filteredRows.reduce((s, r) => s + r.litros, 0);
       const totNeto = filteredRows.reduce((s, r) => s + r.montoNeto, 0);
       const totIVA = filteredRows.reduce((s, r) => s + r.iva, 0);
-      const totImpRecup = filteredRows.reduce((s, r) => s + r.impRecupNoRecuperable, 0);
+      const totImpRecup = filteredRows.reduce((s, r) => s + r.impEspecifico, 0);
       const totMonto = filteredRows.reduce((s, r) => s + r.montoTotal, 0);
 
       document.getElementById('totalLitros').textContent = formatNumber(totLitros, 2);
@@ -582,7 +587,7 @@
         'TIPO DE COMBUSTIBLE': r.tipoCombustible,
         'MONTO NETO': r.montoNeto,
         'IMPUESTO (IVA)': r.iva,
-        'IMPUESTO RECUP NO RECUPERABLE': r.impRecupNoRecuperable,
+        'IMP. ESPECÍFICO LEY 18.502': r.impEspecifico,
         'MONTO TOTAL': r.montoTotal,
         'DESTINO (CC)': r.destinoCC,
         'DESTINO (EMP)': r.destinoEmp,
@@ -597,7 +602,7 @@
       const totLitros = filteredRows.reduce((s, r) => s + r.litros, 0);
       const totNeto = filteredRows.reduce((s, r) => s + r.montoNeto, 0);
       const totIVA = filteredRows.reduce((s, r) => s + r.iva, 0);
-      const totImpRecup = filteredRows.reduce((s, r) => s + r.impRecupNoRecuperable, 0);
+      const totImpRecup = filteredRows.reduce((s, r) => s + r.impEspecifico, 0);
       const totMonto = filteredRows.reduce((s, r) => s + r.montoTotal, 0);
 
       excelData.push({});
@@ -609,7 +614,7 @@
         'TIPO DE COMBUSTIBLE': '',
         'MONTO NETO': totNeto,
         'IMPUESTO (IVA)': totIVA,
-        'IMPUESTO RECUP NO RECUPERABLE': totImpRecup,
+        'IMP. ESPECÍFICO LEY 18.502': totImpRecup,
         'MONTO TOTAL': totMonto
       });
 
