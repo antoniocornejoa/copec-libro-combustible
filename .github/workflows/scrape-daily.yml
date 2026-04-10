@@ -1,0 +1,105 @@
+name: Scrape Copec - Diario
+
+on:
+  # Ejecutar todos los días a las 18:00 Chile (21:00 UTC, considera CLT = UTC-3)
+  schedule:
+    - cron: '0 21 * * *'
+
+  # Permitir ejecución manual desde GitHub
+  workflow_dispatch:
+    inputs:
+      month:
+        description: 'Mes a extraer (formato: YYYY-MM, ej: 2026-04). Vacío = mes actual'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Determinar mes a extraer
+        id: month
+        run: |
+          if [ -n "${{ github.event.inputs.month }}" ]; then
+            echo "target=${{ github.event.inputs.month }}" >> $GITHUB_OUTPUT
+          else
+            # Por defecto, extraer el mes actual
+            echo "target=$(TZ='America/Santiago' date '+%Y-%m')" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Ejecutar scraper
+        env:
+          COPEC_USER: ${{ secrets.COPEC_USER }}
+          COPEC_PASSWORD: ${{ secrets.COPEC_PASSWORD }}
+        run: node scraper.js --month ${{ steps.month.outputs.target }}
+
+      - name: Verificar archivos generados
+        run: |
+          echo "=== Archivos generados ==="
+          ls -la public/data/
+          echo ""
+          echo "=== Index ==="
+          cat public/data/index.json
+
+      - name: Commit y push datos
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add public/data/
+          if git diff --staged --quiet; then
+            echo "Sin cambios nuevos"
+          else
+            MONTH="${{ steps.month.outputs.target }}"
+            git commit -m "datos: actualizar transacciones ${MONTH}"
+            git push
+          fi
+
+  # Deploy a GitHub Pages
+  deploy:
+    needs: scrape
+    runs-on: ubuntu-latest
+    if: success()
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main  # Asegurar que tenemos los datos actualizados
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'public'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
