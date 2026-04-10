@@ -246,9 +246,34 @@
     <input type="text" id="searchInput" placeholder="Conductor, patente...">
 
     <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+      <button class="btn" style="background:#ff9800;color:white;" onclick="toggleTaxConfig()">Tasas Imp.</button>
       <button class="btn btn-success" onclick="exportToExcel()">
         📥 Exportar Excel
       </button>
+    </div>
+  </div>
+
+  <!-- Panel de configuracion de tasas impuesto especifico -->
+  <div id="taxConfig" style="display:none; background:#fff8e1; border-left:4px solid #ff9800; padding:1rem 2rem; margin:0 0 0;">
+    <strong style="font-size:0.9rem;">Tasas Impuesto Específico - Ley 18.502 ($/litro)</strong>
+    <div style="display:flex; gap:2rem; margin-top:0.5rem; flex-wrap:wrap; align-items:center;">
+      <div>
+        <label style="font-size:0.82rem; color:#666;">Diesel:</label>
+        <input type="number" id="taxDiesel" value="120" step="0.1" style="width:80px; padding:0.3rem; border:1px solid #ccc; border-radius:4px;" onchange="renderAll()">
+      </div>
+      <div>
+        <label style="font-size:0.82rem; color:#666;">Gas 93:</label>
+        <input type="number" id="taxGas93" value="390" step="0.1" style="width:80px; padding:0.3rem; border:1px solid #ccc; border-radius:4px;" onchange="renderAll()">
+      </div>
+      <div>
+        <label style="font-size:0.82rem; color:#666;">Gas 95:</label>
+        <input type="number" id="taxGas95" value="390" step="0.1" style="width:80px; padding:0.3rem; border:1px solid #ccc; border-radius:4px;" onchange="renderAll()">
+      </div>
+      <div>
+        <label style="font-size:0.82rem; color:#666;">Gas 97:</label>
+        <input type="number" id="taxGas97" value="390" step="0.1" style="width:80px; padding:0.3rem; border:1px solid #ccc; border-radius:4px;" onchange="renderAll()">
+      </div>
+      <span style="font-size:0.75rem; color:#999;">Ajusta las tasas según publicación SII/ENAP vigente</span>
     </div>
   </div>
 
@@ -373,46 +398,45 @@
       // Transformar transacciones a filas
       filteredRows = currentData.transactions.map(tx => {
         const d = tx.detail || {};
-        // Extraer datos del detalle o de la transacción base
-        const row = {
+        const litros = parseFloat(tx.litros || d.cantidad || d.litros || 0);
+        const montoTotal = parseFloat(tx.monto || d.montoTotal || d.monto || 0);
+        const tipoCombustible = d.combustible || d.tipoCombustible || tx.tipoCombustible || '';
+
+        // ═══ Cálculo tributario Ley 18.502 ═══
+        // El montoTotal de Copec incluye todo (neto + imp específico + IVA)
+        // Estructura: montoTotal = (precioNeto + impEspecifico) * 1.19
+        //
+        // Descomposición:
+        //   baseImponible = montoTotal / 1.19
+        //   IVA = montoTotal - baseImponible
+        //   impEspecifico = litros * tasa_por_litro (configurable)
+        //   precioNeto = baseImponible - impEspecifico
+        const tasaEspecifica = getTasaEspecifica(tipoCombustible);
+        const impEspecifico = Math.round(litros * tasaEspecifica);
+        const baseImponible = Math.round(montoTotal / 1.19);
+        const iva = montoTotal - baseImponible;
+        const montoNeto = baseImponible - impEspecifico;
+
+        return {
           fecha: tx.fecha || tx.fechaTransaccion || d.fecha || '',
           factura: tx.nroDocumento || d.nroDocumento || d.folioDocumento || '',
-          litros: parseFloat(tx.litros || d.cantidad || d.litros || 0),
-          precioUnitario: parseFloat(d.valorPorLitro || d.precioUnitario || tx.precioUnitario || 0),
-          tipoCombustible: d.combustible || d.tipoCombustible || tx.tipoCombustible || '',
-          montoNeto: 0,
-          iva: 0,
-          impRecupNoRecuperable: 0,
-          montoTotal: parseFloat(tx.monto || d.montoTotal || d.monto || 0),
+          litros: litros,
+          precioUnitario: litros > 0 ? Math.round(montoNeto / litros) : 0,
+          tipoCombustible: tipoCombustible,
+          montoNeto: montoNeto,
+          iva: iva,
+          impRecupNoRecuperable: impEspecifico,
+          montoTotal: montoTotal,
           destinoCC: d.estacion || tx.estacion || '',
           destinoEmp: d.direccion || d.sucursal || '',
           tipoDocumento: tx.tipoDocumento || d.tipoDocumento || 'Guia de despacho',
           nFolio: tx.nroDocumento || d.folioDocumento || d.nroDocumento || '',
           conductor: tx.conductor || d.conductor || tx.nombreConductor || '',
           patente: tx.patente || d.patente || '',
-          estacion: d.estacion || d.nombreEstacion || '',
+          estacion: d.nombreEstacion || d.estacion || '',
           docUrl: d.urlDocumento || d.urlAcepta || '',
           odometro: tx.odometro || d.odometro || ''
         };
-
-        // Calcular montos si tenemos litros y precio
-        if (row.litros && row.precioUnitario) {
-          row.montoNeto = row.litros * row.precioUnitario;
-        } else if (row.montoTotal) {
-          row.montoNeto = Math.round(row.montoTotal / 1.19);
-        }
-
-        if (row.montoNeto) {
-          row.iva = Math.round(row.montoNeto * 0.19);
-        }
-
-        // El impuesto especifico (Ley 18.502) se aplica solo a diesel
-        if (row.tipoCombustible.toUpperCase().includes('DIESEL')) {
-          // Tasa UTM componente variable + fija por m3
-          row.impRecupNoRecuperable = 0; // Este dato viene del documento
-        }
-
-        return row;
       });
 
       // Aplicar filtros
@@ -650,6 +674,21 @@
     document.getElementById('monthSelect').addEventListener('change', (e) => loadMonth(e.target.value));
     document.getElementById('fuelFilter').addEventListener('change', renderAll);
     document.getElementById('searchInput').addEventListener('input', renderAll);
+
+    // ─── Tasas impuesto específico ───────────────────────────────────────
+    function getTasaEspecifica(tipoCombustible) {
+      const fuel = (tipoCombustible || '').toUpperCase();
+      if (fuel.includes('DIESEL')) return parseFloat(document.getElementById('taxDiesel')?.value) || 120;
+      if (fuel.includes('93')) return parseFloat(document.getElementById('taxGas93')?.value) || 390;
+      if (fuel.includes('95')) return parseFloat(document.getElementById('taxGas95')?.value) || 390;
+      if (fuel.includes('97')) return parseFloat(document.getElementById('taxGas97')?.value) || 390;
+      return 0;
+    }
+
+    function toggleTaxConfig() {
+      const el = document.getElementById('taxConfig');
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
 
     // ─── Start ──────────────────────────────────────────────────────────
     init();
