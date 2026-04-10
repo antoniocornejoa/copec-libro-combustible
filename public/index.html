@@ -474,6 +474,10 @@
       const dieselLitros = filteredRows.filter(r => r.tipoCombustible.toUpperCase().includes('DIESEL')).reduce((s, r) => s + r.litros, 0);
       const gasLitros = filteredRows.filter(r => r.tipoCombustible.toUpperCase().includes('GAS')).reduce((s, r) => s + r.litros, 0);
 
+      // Impuesto específico recuperable vs no recuperable
+      const impRecuperable = filteredRows.filter(r => r.esRecuperable).reduce((s, r) => s + r.impEspecifico, 0);
+      const impNoRecuperable = filteredRows.filter(r => !r.esRecuperable).reduce((s, r) => s + r.impEspecifico, 0);
+
       stats.innerHTML = `
         <div class="stat-card">
           <div class="label">Transacciones</div>
@@ -492,9 +496,15 @@
           <div class="label">IVA</div>
           <div class="value">$${formatNumber(totalIVA, 0)}</div>
         </div>
+        <div class="stat-card" style="border-left: 4px solid #2e7d32;">
+          <div class="label">Imp. Recuperable</div>
+          <div class="value" style="color:#2e7d32;">$${formatNumber(impRecuperable, 0)}</div>
+          <div class="sub">Diesel - Crédito fiscal</div>
+        </div>
         <div class="stat-card">
           <div class="label">Total</div>
           <div class="value">$${formatNumber(totalMonto, 0)}</div>
+          <div class="sub">Imp. no recup: $${formatNumber(impNoRecuperable, 0)}</div>
         </div>
       `;
     }
