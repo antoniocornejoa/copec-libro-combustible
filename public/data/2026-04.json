@@ -1,7 +1,77 @@
 {
   "month": "2026-04",
-  "range": { "start": "2026-04-01", "end": "2026-04-30", "label": "2026-04" },
+  "range": {
+    "start": "2026-04-01",
+    "end": "2026-04-30",
+    "label": "2026-04"
+  },
   "transactions": [
+    {
+      "fecha": "10-04-2026 15:58",
+      "tipoDocumento": "Guia de despacho",
+      "conductor": "ALEJANDRO ABURTO",
+      "patente": "TVGF39",
+      "odometro": "40.601",
+      "formaDePago": "Billetera",
+      "litros": "100",
+      "monto": 150800,
+      "nroDocumento": "40677700",
+      "idTransaccionCliente": 11722100,
+      "detail": {
+        "combustible": "Diesel",
+        "cantidad": 100,
+        "valorPorLitro": 1508,
+        "estacion": "60210",
+        "nombreEstacion": "AV CIRCUNVALACION NORTE 1265",
+        "direccion": "TALCA - CONCORDIA",
+        "tipoDocumento": "Guia de despacho",
+        "folioDocumento": "40677700"
+      }
+    },
+    {
+      "fecha": "10-04-2026 12:56",
+      "tipoDocumento": "Guia de despacho",
+      "conductor": "HECTOR ROJAS",
+      "patente": "SGSY27",
+      "odometro": "204.323",
+      "formaDePago": "Billetera",
+      "litros": "88.19",
+      "monto": 133701,
+      "nroDocumento": "40677680",
+      "idTransaccionCliente": 11722080,
+      "detail": {
+        "combustible": "Diesel",
+        "cantidad": 88.19,
+        "valorPorLitro": 1516,
+        "estacion": "60210",
+        "nombreEstacion": "AV CIRCUNVALACION NORTE 1265",
+        "direccion": "TALCA - CONCORDIA",
+        "tipoDocumento": "Guia de despacho",
+        "folioDocumento": "40677680"
+      }
+    },
+    {
+      "fecha": "10-04-2026 12:51",
+      "tipoDocumento": "Guia de despacho",
+      "conductor": "HECTOR ROJAS",
+      "patente": "SGSY27",
+      "odometro": "204.323",
+      "formaDePago": "Billetera",
+      "litros": "67.52",
+      "monto": 106674,
+      "nroDocumento": "40677675",
+      "idTransaccionCliente": 11722075,
+      "detail": {
+        "combustible": "Gas 93",
+        "cantidad": 67.52,
+        "valorPorLitro": 1580,
+        "estacion": "60210",
+        "nombreEstacion": "AV CIRCUNVALACION NORTE 1265",
+        "direccion": "TALCA - CONCORDIA",
+        "tipoDocumento": "Guia de despacho",
+        "folioDocumento": "40677675"
+      }
+    },
     {
       "fecha": "10-04-2026 09:45",
       "tipoDocumento": "Guia de despacho",
@@ -38,7 +108,7 @@
       "idTransaccionCliente": 11721967,
       "detail": {
         "combustible": "Gas 93",
-        "cantidad": 62.00,
+        "cantidad": 62,
         "valorPorLitro": 1613,
         "estacion": "60210",
         "nombreEstacion": "AV CIRCUNVALACION NORTE 1265",
@@ -61,7 +131,7 @@
       "idTransaccionCliente": 11721900,
       "detail": {
         "combustible": "Diesel",
-        "cantidad": 210.50,
+        "cantidad": 210.5,
         "valorPorLitro": 1567,
         "estacion": "60210",
         "nombreEstacion": "AV CIRCUNVALACION NORTE 1265",
@@ -83,7 +153,7 @@
       "idTransaccionCliente": 11721880,
       "detail": {
         "combustible": "Diesel",
-        "cantidad": 362.80,
+        "cantidad": 362.8,
         "valorPorLitro": 1516,
         "estacion": "60210",
         "nombreEstacion": "AV CIRCUNVALACION NORTE 1265",
@@ -226,8 +296,20 @@
     }
   ],
   "facturas": [
-    { "fecha": "01-04-2026", "nroDocumento": "949215242", "monto": 6290, "fechaVencimiento": "01-04-2026", "estado": "Pagada" },
-    { "fecha": "01-04-2026", "nroDocumento": "949198777", "monto": 12685053, "fechaVencimiento": "01-04-2026", "estado": "Pagada" }
+    {
+      "fecha": "01-04-2026",
+      "nroDocumento": "949215242",
+      "monto": 6290,
+      "fechaVencimiento": "01-04-2026",
+      "estado": "Pagada"
+    },
+    {
+      "fecha": "01-04-2026",
+      "nroDocumento": "949198777",
+      "monto": 12685053,
+      "fechaVencimiento": "01-04-2026",
+      "estado": "Pagada"
+    }
   ],
   "extractedAt": "2026-04-10T12:00:00.000Z"
 }
