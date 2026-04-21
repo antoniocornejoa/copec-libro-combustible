@@ -9,7 +9,7 @@
  *   node scraper.js              -> Extrae el mes actual
  *   node scraper.js --month 2026-03  -> Extrae un mes especifico
  *   node scraper.js --all        -> Extrae todos los meses (ultimo ano)
- *
+ *h
  * Variables de entorno requeridas:
  *   COPEC_ACCESS_TOKEN  -> Token de acceso (header access_token)
  *   COPEC_EQUIPO_SECRET -> Clave secreta para firmar requests (HMAC-SHA256)
@@ -205,7 +205,7 @@ async function main() {
 
     // Guardar indice
     const existingFiles = fs.readdirSync(OUTPUT_DIR)
-      .filter(f => f.match(/^\\d{4}-\\d{2}\\.json$/))
+            .filter(f => f.match(/^\d{4}-\d{2}\.json$/))
       .map(f => f.replace('.json', ''))
       .sort()
       .reverse();
