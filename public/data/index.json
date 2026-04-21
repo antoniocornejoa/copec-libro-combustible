@@ -1,5 +1,10 @@
 {
-  "months": [],
-  "lastUpdated": "2026-04-21T20:58:02.658Z",
+  "months": [
+    "2026-04",
+    "2026-03",
+    "2026-02",
+    "2026-01"
+  ],
+  "lastUpdated": "2026-04-21T21:08:29.291Z",
   "empresa": "Constructora Colbun"
 }
