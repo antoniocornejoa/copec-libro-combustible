@@ -2,10 +2,10 @@
   "month": "2026-04",
   "range": {
     "start": "2026-04-01",
-    "end": "2026-04-30",
+    "end": "2026-05-01",
     "label": "2026-04"
   },
   "transactions": [],
   "facturas": [],
-  "extractedAt": "2026-04-21T19:57:36.257Z"
+  "extractedAt": "2026-04-21T20:30:32.015Z"
 }
