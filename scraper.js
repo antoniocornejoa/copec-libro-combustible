@@ -28,10 +28,10 @@ const OUTPUT_DIR = path.join(__dirname, 'public', 'data');
 function getMonthRange(yearMonth) {
   const [year, month] = yearMonth.split('-').map(Number);
   const start = new Date(year, month - 1, 1);
-  const end = new Date(year, month, 0);
+  const endNextMonth = new Date(year, month, 1); // primer dia del mes siguiente
   return {
     start: formatDate(start),
-    end: formatDate(end),
+    end: formatDate(endNextMonth),
     label: `${year}-${String(month).padStart(2, '0')}`
   };
 }
@@ -172,8 +172,9 @@ async function main() {
       try {
         const facResponse = await apiCall('cuenta/consultarfacturas', {
           cuentaId: cuentaId,
-          fechaInicio: range.start,
-          fechaFin: range.end
+          fechaConsultaInicio: range.start,
+          fechaConsulta: range.end,
+          posicionInicial: 0
         }, tokens);
 
         if (Array.isArray(facResponse)) facturas = facResponse;
