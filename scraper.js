@@ -6,7 +6,7 @@
  * La firma HMAC-SHA256 se calcula dinamicamente por cada request.
  *
  * Uso:
- *   node scraper.js              -> Extrae el mes actual
+ *   node scraper.js             -> Extrae el mes actual
  *   node scraper.js --month 2026-03  -> Extrae un mes especifico
  *   node scraper.js --all        -> Extrae todos los meses (ultimo ano)
  *h
@@ -20,41 +20,40 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-// --- Configuracion ---
-const API_URL = 'https://api.copecempresas.com/EM1/PR/empresas';
+const API_BASE = 'https://api.copecempresas.com/EM1/PR/empresas';
 const OUTPUT_DIR = path.join(__dirname, 'public', 'data');
 
-// --- Helpers ---
-function getMonthRange(yearMonth) {
-  const [year, month] = yearMonth.split('-').map(Number);
-  const start = new Date(year, month - 1, 1);
-  const endNextMonth = new Date(year, month, 1); // primer dia del mes siguiente
-  return {
-    start: formatDate(start),
-    end: formatDate(endNextMonth),
-    label: `${year}-${String(month).padStart(2, '0')}`
-  };
+// --- Utilidades ---
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function computeFirma(body, equipoSecret) {
+  const bodyStr = JSON.stringify(body);
+  return crypto.createHmac('sha256', equipoSecret).update(bodyStr).digest('hex');
 }
 
-function formatDate(d) {
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yyyy = d.getFullYear();
-  return `${yyyy}-${mm}-${dd}`;
-}
+async function apiCall(endpoint, body, tokens) {
+  const url = API_BASE + '/' + endpoint;
+  const firma = computeFirma(body, tokens.equipoSecret);
 
-function getCurrentMonth() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-}
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'access_token': tokens.access_token,
+      'firma': firma
+    },
+    body: JSON.stringify(body)
+  });
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+  if (!resp.ok) {
+    throw new Error('API error: ' + resp.status + ' ' + resp.statusText);
+  }
 
-// --- Extrae array de transacciones/facturas del response ---
+  return resp.json();
+}
+// Extraer array de la respuesta de la API
+// La API de Copec devuelve: { error: {...}, data: { transacciones: [...], posicionFinal: N } }
 function extractArray(response, arrayKey) {
-  // La API de Copec devuelve: { error: {...}, data: { transacciones: [...], posicionFinal: N } }
   if (response.data && response.data[arrayKey] && Array.isArray(response.data[arrayKey])) {
     return response.data[arrayKey];
   }
@@ -65,41 +64,79 @@ function extractArray(response, arrayKey) {
   return [];
 }
 
-// --- Firma HMAC-SHA256 ---
-function computeFirma(bodyString, equipoSecret) {
-  return crypto
-    .createHmac('sha256', equipoSecret)
-    .update(bodyString)
-    .digest('hex');
+// Normalizar transaccion de la API al formato que espera el dashboard
+function normalizeTransaction(tx, detailResponse) {
+  const det = (detailResponse && detailResponse.data) ? detailResponse.data : {};
+  const items = det.detalleTransaccion || [];
+  const item = items[0] || {};
+
+  const litros = parseFloat(tx.cantidad || item.cantidad || 0);
+  const precioUnitario = parseFloat(item.precioUnitario || 0);
+  const montoTotal = parseFloat(tx.ventaMontoTotal || tx.ventaPagoTotal || 0);
+  const tipoCombustible = (item.productoNombre || '').trim();
+
+  // Calcular montoNeto e IVA (19%)
+  const montoNeto = Math.round(montoTotal / 1.19);
+  const iva = montoTotal - montoNeto;
+
+  // Tipo de documento
+  let tipoDocumento = '';
+  const tipoDocId = tx.tipoDocumentoId || '';
+  if (tipoDocId === '52') tipoDocumento = 'Guia de despacho';
+  else if (tipoDocId === '33') tipoDocumento = 'Factura electronica';
+  else if (tipoDocId === '34') tipoDocumento = 'Factura exenta';
+  else tipoDocumento = tipoDocId;
+
+  return {
+    fecha: tx.ventaFechaCreacion || tx.ventaTimestampDte || '',
+    fechaTransaccion: tx.ventaTimestampDte || tx.ventaFechaCreacion || '',
+    factura: tx.ventaDocumentoFolio || '',
+    nroDocumento: tx.ventaDocumentoFolio || '',
+    folioDocumento: tx.ventaDocumentoFolio || '',
+    litros: litros,
+    cantidad: litros,
+    precio: precioUnitario,
+    precioUnitario: precioUnitario,
+    tipoCombustible: tipoCombustible,
+    combustible: tipoCombustible,
+    tipo: tipoCombustible,
+    montoNeto: montoNeto,
+    monto: montoTotal,
+    montoTotal: montoTotal,
+    iva: iva,
+    impEsp: 0,
+    destino: '',
+    destinoEmp: '',
+    tipoDocumento: tipoDocumento,
+    conductor: tx.usuarioNombreApellido || '',
+    nombreConductor: tx.usuarioNombreApellido || '',
+    patente: tx.vehiculoPatente || '',
+    estacion: tx.ventaSitioNombre || det.ventaEstacion || '',
+    nombreEstacion: det.ventaEstacion || tx.ventaSitioNombre || '',
+    sucursal: tx.ventaSitioNombre || '',
+    direccion: det.ventaSitioDireccion || '',
+    urlDocumento: tx.documentoUrl || '',
+    urlAcepta: '',
+    odometro: tx.vehiculoOdometro || det.vehiculoOdometro || 0,
+    medioDePago: tx.medioDePago || '',
+    ventaId: tx.ventaId,
+    cuentaId: tx.cuentaId
+  };
+}
+function getMonthRange(month) {
+  const [year, m] = month.split('-').map(Number);
+  const start = month + '-01';
+  const endDate = new Date(year, m, 1);
+  const end = endDate.toISOString().split('T')[0];
+  return { start, end, label: month };
 }
 
-// --- API Call Helper ---
-async function apiCall(endpoint, body, tokens) {
-  const bodyString = JSON.stringify(body);
-  const firma = computeFirma(bodyString, tokens.equipoSecret);
-
-  const res = await fetch(`${API_URL}/${endpoint}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'access_token': tokens.access_token,
-      'firma': firma
-    },
-    body: bodyString
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`API ${endpoint} respondio ${res.status}: ${text.substring(0, 200)}`);
-  }
-
-  return await res.json();
+function getCurrentMonth() {
+  const now = new Date();
+  return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
 }
 
-// --- Main ---
 async function main() {
-  // Parsear argumentos
   const args = process.argv.slice(2);
   let targetMonths = [];
 
@@ -107,7 +144,7 @@ async function main() {
     const now = new Date();
     for (let i = 0; i < 12; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      targetMonths.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+      targetMonths.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
     }
   } else if (args.includes('--month')) {
     const idx = args.indexOf('--month');
@@ -123,6 +160,7 @@ async function main() {
     access_token: process.env.COPEC_ACCESS_TOKEN,
     equipoSecret: process.env.COPEC_EQUIPO_SECRET
   };
+
   const cuentaId = parseInt(process.env.COPEC_CUENTA_ID);
 
   if (!tokens.access_token || !tokens.equipoSecret || !cuentaId) {
@@ -152,9 +190,8 @@ async function main() {
 
       const transactions = extractArray(txResponse, 'transacciones');
       console.log('  ' + transactions.length + ' transacciones encontradas');
-
-      // 2. Para cada transaccion, obtener detalle
-      const detailedTransactions = [];
+      // 2. Para cada transaccion, obtener detalle y normalizar
+      const normalizedTransactions = [];
       for (let i = 0; i < transactions.length; i++) {
         const tx = transactions[i];
         const txId = tx.idTransaccionCliente || tx.ventaId || tx.id || tx.transaccionId;
@@ -164,10 +201,10 @@ async function main() {
             cuentaId: cuentaId,
             idTransaccionCliente: txId
           }, tokens);
-          detailedTransactions.push({ ...tx, detail });
+          normalizedTransactions.push(normalizeTransaction(tx, detail));
         } catch (e) {
           console.log('    Error en detalle: ' + e.message);
-          detailedTransactions.push(tx);
+          normalizedTransactions.push(normalizeTransaction(tx, null));
         }
         await sleep(300);
       }
@@ -183,16 +220,15 @@ async function main() {
         }, tokens);
 
         facturas = extractArray(facResponse, 'transacciones');
+        console.log('  ' + facturas.length + ' facturas encontradas');
       } catch (e) {
-        console.log('  Error en facturas: ' + e.message);
+        console.log('  Error obteniendo facturas: ' + e.message);
       }
-
-      console.log('  ' + facturas.length + ' facturas encontradas');
 
       const monthData = {
         month: month,
         range: range,
-        transactions: detailedTransactions,
+        transactions: normalizedTransactions,
         facturas: facturas,
         extractedAt: new Date().toISOString()
       };
@@ -205,7 +241,7 @@ async function main() {
 
     // Guardar indice
     const existingFiles = fs.readdirSync(OUTPUT_DIR)
-            .filter(f => f.match(/^\d{4}-\d{2}\.json$/))
+          .filter(f => f.match(/^\d{4}-\d{2}\.json$/))
       .map(f => f.replace('.json', ''))
       .sort()
       .reverse();
@@ -221,7 +257,7 @@ async function main() {
     console.log('  Meses disponibles: ' + existingFiles.join(', '));
 
   } catch (error) {
-    console.error('Error: ' + error.message);
+    console.error('Error en extraccion:', error.message);
     process.exit(1);
   }
 }
