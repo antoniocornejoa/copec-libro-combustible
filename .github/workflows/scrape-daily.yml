@@ -42,7 +42,7 @@ jobs:
       - name: Ejecutar scraper
         env:
           COPEC_ACCESS_TOKEN: ${{ secrets.COPEC_ACCESS_TOKEN }}
-          COPEC_FIRMA: ${{ secrets.COPEC_FIRMA }}
+          COPEC_EQUIPO_SECRET: ${{ secrets.COPEC_EQUIPO_SECRET }}
           COPEC_CUENTA_ID: ${{ secrets.COPEC_CUENTA_ID }}
         run: node scraper.js --month ${{ steps.month.outputs.target }}
 
