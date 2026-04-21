@@ -6,9 +6,9 @@
  * La firma HMAC-SHA256 se calcula dinamicamente por cada request.
  *
  * Uso:
- *   node scraper.js                    -> Extrae el mes actual
- *   node scraper.js --month 2026-03    -> Extrae un mes especifico
- *   node scraper.js --all              -> Extrae todos los meses (ultimo ano)
+ *   node scraper.js              -> Extrae el mes actual
+ *   node scraper.js --month 2026-03  -> Extrae un mes especifico
+ *   node scraper.js --all        -> Extrae todos los meses (ultimo ano)
  *
  * Variables de entorno requeridas:
  *   COPEC_ACCESS_TOKEN  -> Token de acceso (header access_token)
@@ -50,6 +50,19 @@ function getCurrentMonth() {
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// --- Extrae array de transacciones/facturas del response ---
+function extractArray(response, arrayKey) {
+  // La API de Copec devuelve: { error: {...}, data: { transacciones: [...], posicionFinal: N } }
+  if (response.data && response.data[arrayKey] && Array.isArray(response.data[arrayKey])) {
+    return response.data[arrayKey];
+  }
+  if (response.data && Array.isArray(response.data)) return response.data;
+  if (Array.isArray(response)) return response;
+  if (response[arrayKey] && Array.isArray(response[arrayKey])) return response[arrayKey];
+  if (response.resultado && Array.isArray(response.resultado)) return response.resultado;
+  return [];
 }
 
 // --- Firma HMAC-SHA256 ---
@@ -137,33 +150,25 @@ async function main() {
         posicionInicial: 0
       }, tokens);
 
-      let transactions = [];
-      if (Array.isArray(txResponse)) transactions = txResponse;
-      else if (txResponse.data && Array.isArray(txResponse.data)) transactions = txResponse.data;
-      else if (txResponse.transacciones && Array.isArray(txResponse.transacciones)) transactions = txResponse.transacciones;
-      else if (txResponse.resultado && Array.isArray(txResponse.resultado)) transactions = txResponse.resultado;
-
+      const transactions = extractArray(txResponse, 'transacciones');
       console.log('  ' + transactions.length + ' transacciones encontradas');
 
       // 2. Para cada transaccion, obtener detalle
       const detailedTransactions = [];
       for (let i = 0; i < transactions.length; i++) {
         const tx = transactions[i];
-        const txId = tx.idTransaccionCliente || tx.id || tx.transaccionId;
-        console.log('  Detalle ' + (i + 1) + '/' + transactions.length + ': ' + txId);
-
+        const txId = tx.idTransaccionCliente || tx.ventaId || tx.id || tx.transaccionId;
+        console.log('    Detalle ' + (i + 1) + '/' + transactions.length + ': ' + txId);
         try {
           const detail = await apiCall('cuenta/consultardetalletransaccion', {
             cuentaId: cuentaId,
             idTransaccionCliente: txId
           }, tokens);
-
           detailedTransactions.push({ ...tx, detail });
         } catch (e) {
-          console.log('  Error en detalle: ' + e.message);
+          console.log('    Error en detalle: ' + e.message);
           detailedTransactions.push(tx);
         }
-
         await sleep(300);
       }
 
@@ -177,10 +182,7 @@ async function main() {
           posicionInicial: 0
         }, tokens);
 
-        if (Array.isArray(facResponse)) facturas = facResponse;
-        else if (facResponse.data && Array.isArray(facResponse.data)) facturas = facResponse.data;
-        else if (facResponse.facturas && Array.isArray(facResponse.facturas)) facturas = facResponse.facturas;
-        else if (facResponse.resultado && Array.isArray(facResponse.resultado)) facturas = facResponse.resultado;
+        facturas = extractArray(facResponse, 'transacciones');
       } catch (e) {
         console.log('  Error en facturas: ' + e.message);
       }
@@ -203,7 +205,7 @@ async function main() {
 
     // Guardar indice
     const existingFiles = fs.readdirSync(OUTPUT_DIR)
-      .filter(f => f.match(/^\d{4}-\d{2}\.json$/))
+      .filter(f => f.match(/^\\d{4}-\\d{2}\\.json$/))
       .map(f => f.replace('.json', ''))
       .sort()
       .reverse();
@@ -213,8 +215,8 @@ async function main() {
       lastUpdated: new Date().toISOString(),
       empresa: 'Constructora Colbun'
     };
-    fs.writeFileSync(path.join(OUTPUT_DIR, 'index.json'), JSON.stringify(index, null, 2), 'utf-8');
 
+    fs.writeFileSync(path.join(OUTPUT_DIR, 'index.json'), JSON.stringify(index, null, 2), 'utf-8');
     console.log('Extraccion completada exitosamente');
     console.log('  Meses disponibles: ' + existingFiles.join(', '));
 
