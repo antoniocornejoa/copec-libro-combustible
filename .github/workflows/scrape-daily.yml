@@ -1,15 +1,13 @@
 name: Scrape Copec - Diario
 
 on:
-  # Ejecutar todos los días a las 18:00 Chile (21:00 UTC, considera CLT = UTC-3)
   schedule:
     - cron: '0 21 * * *'
 
-  # Permitir ejecución manual desde GitHub
   workflow_dispatch:
     inputs:
       month:
-        description: 'Mes a extraer (formato: YYYY-MM, ej: 2026-04). Vacío = mes actual'
+        description: 'Mes a extraer (formato: YYYY-MM, ej: 2026-04). Vacio = mes actual'
         required: false
         type: string
 
@@ -21,7 +19,7 @@ permissions:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repositorio
@@ -32,26 +30,20 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Instalar dependencias
-        run: npm install
-
-      - name: Instalar Playwright Chromium
-        run: npx playwright install chromium --with-deps
-
       - name: Determinar mes a extraer
         id: month
         run: |
           if [ -n "${{ github.event.inputs.month }}" ]; then
             echo "target=${{ github.event.inputs.month }}" >> $GITHUB_OUTPUT
           else
-            # Por defecto, extraer el mes actual
             echo "target=$(TZ='America/Santiago' date '+%Y-%m')" >> $GITHUB_OUTPUT
           fi
 
       - name: Ejecutar scraper
         env:
-          COPEC_USER: ${{ secrets.COPEC_USER }}
-          COPEC_PASSWORD: ${{ secrets.COPEC_PASSWORD }}
+          COPEC_ACCESS_TOKEN: ${{ secrets.COPEC_ACCESS_TOKEN }}
+          COPEC_FIRMA: ${{ secrets.COPEC_FIRMA }}
+          COPEC_CUENTA_ID: ${{ secrets.COPEC_CUENTA_ID }}
         run: node scraper.js --month ${{ steps.month.outputs.target }}
 
       - name: Verificar archivos generados
@@ -75,7 +67,6 @@ jobs:
             git push
           fi
 
-  # Deploy a GitHub Pages
   deploy:
     needs: scrape
     runs-on: ubuntu-latest
@@ -89,7 +80,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: main  # Asegurar que tenemos los datos actualizados
+          ref: main
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
