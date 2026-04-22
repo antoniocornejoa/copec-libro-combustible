@@ -64,7 +64,6 @@ function computeFirma(bodyString, equipoSecret) {
 async function apiCall(endpoint, body, tokens) {
   const bodyString = JSON.stringify(body);
   const firma = computeFirma(bodyString, tokens.equipoSecret);
-
   const res = await fetch(`${API_URL}/${endpoint}`, {
     method: 'POST',
     headers: {
@@ -75,12 +74,10 @@ async function apiCall(endpoint, body, tokens) {
     },
     body: bodyString
   });
-
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`API ${endpoint} respondio ${res.status}: ${text.substring(0, 200)}`);
   }
-
   return await res.json();
 }
 
@@ -88,19 +85,23 @@ async function apiCall(endpoint, body, tokens) {
 function extractDetail(detailResponse) {
   if (!detailResponse) return {};
 
-  // La API puede devolver la data en diferentes formatos:
-  // Formato 1: { error: {}, data: { combustible, cantidad, ... } }
-  // Formato 2: { combustible, cantidad, ... } (directo)
-  // Formato 3: { error: {}, data: { detalleTransaccion: [{...}] } }
-
   let det = detailResponse;
 
-  // Si tiene wrapper data, usar data
+  // Unwrap data wrapper: { error:{}, data:{...} }
   if (det.data && typeof det.data === 'object') {
     det = det.data;
   }
 
-  // Si tiene detalleTransaccion array, usar primer item
+  // Handle transaccion wrapper (singular): { transaccion: {...} }
+  if (det.transaccion && typeof det.transaccion === 'object') {
+    if (Array.isArray(det.transaccion)) {
+      det = det.transaccion[0] || {};
+    } else {
+      det = det.transaccion;
+    }
+  }
+
+  // Handle detalleTransaccion wrapper (plural): { detalleTransaccion: [{...}] }
   if (det.detalleTransaccion && Array.isArray(det.detalleTransaccion) && det.detalleTransaccion.length > 0) {
     const item = det.detalleTransaccion[0];
     return {
@@ -115,12 +116,12 @@ function extractDetail(detailResponse) {
     };
   }
 
-  // Formato plano directo
+  // Formato plano directo (puede venir de transaccion unwrap o directo)
   return {
     combustible: det.combustible || det.productoNombre || det.tipoCombustible || '',
     cantidad: parseFloat(det.cantidad || 0),
     valorPorLitro: parseFloat(det.valorPorLitro || det.precioUnitario || 0),
-    estacion: det.estacion || det.ventaEstacion || '',
+    estacion: det.estacion || det.ventaEstacion || det.ventaSitioNombre || '',
     nombreEstacion: det.nombreEstacion || det.ventaSitioDireccion || '',
     direccion: det.direccion || det.ventaSitioDireccion || '',
     tipoDocumento: det.tipoDocumento || '',
@@ -228,11 +229,24 @@ async function main() {
             idTransaccionCliente: txId
           }, tokens);
           if (i === 0) {
-            console.log('  DEBUG primer detalle keys:', JSON.stringify(Object.keys(detail)));
-            if (detail.data) console.log('  DEBUG detail.data keys:', JSON.stringify(Object.keys(detail.data)));
+            console.log('  DEBUG detail keys:', JSON.stringify(Object.keys(detail)));
+            if (detail.data) {
+              console.log('  DEBUG detail.data keys:', JSON.stringify(Object.keys(detail.data)));
+              if (detail.data.transaccion) {
+                const t = detail.data.transaccion;
+                console.log('  DEBUG transaccion type:', typeof t, Array.isArray(t) ? 'array' : '');
+                if (typeof t === 'object' && !Array.isArray(t)) {
+                  console.log('  DEBUG transaccion keys:', JSON.stringify(Object.keys(t)));
+                  console.log('  DEBUG transaccion.combustible:', t.combustible);
+                  console.log('  DEBUG transaccion.productoNombre:', t.productoNombre);
+                  console.log('  DEBUG transaccion.tipoCombustible:', t.tipoCombustible);
+                  console.log('  DEBUG transaccion.cantidad:', t.cantidad);
+                  console.log('  DEBUG transaccion.valorPorLitro:', t.valorPorLitro);
+                }
+              }
+            }
             const extracted = extractDetail(detail);
-            console.log('  DEBUG extracted combustible:', extracted.combustible);
-            console.log('  DEBUG extracted valorPorLitro:', extracted.valorPorLitro);
+            console.log('  DEBUG extracted:', JSON.stringify(extracted));
           }
           normalizedTransactions.push(normalizeTransaction(tx, detail));
         } catch (e) {
