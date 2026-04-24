@@ -223,12 +223,12 @@
 <body>
   <div class="header">
     <div>
-      <h1>Libro Combustible - Ley N° 18.502</h1>
+      <h1>Libro Combustible - Ley NÂ° 18.502</h1>
       <div class="subtitle">Registro de transacciones Copec Empresa</div>
     </div>
     <div style="text-align:right;">
       <div class="empresa" id="empresaName">Constructora Colbun</div>
-      <div id="lastUpdated" style="font-size:0.75rem; opacity:0.85; margin-top:0.25rem;">Última actualización: —</div>
+      <div id="lastUpdated" style="font-size:0.75rem; opacity:0.85; margin-top:0.25rem;">Ãltima actualizaciÃ³n: â</div>
     </div>
   </div>
 
@@ -251,14 +251,14 @@
     <div style="margin-left: auto; display: flex; gap: 0.5rem;">
       <button class="btn" style="background:#ff9800;color:white;" onclick="toggleTaxConfig()">Tasas Imp.</button>
       <button class="btn btn-success" onclick="exportToExcel()">
-        📥 Exportar Excel
+        ð¥ Exportar Excel
       </button>
     </div>
   </div>
 
   <!-- Panel de configuracion de tasas impuesto especifico -->
   <div id="taxConfig" style="display:none; background:#fff8e1; border-left:4px solid #ff9800; padding:1rem 2rem; margin:0 0 0;">
-    <strong style="font-size:0.9rem;">Tasas Impuesto Específico - Ley 18.502 ($/litro)</strong>
+    <strong style="font-size:0.9rem;">Tasas Impuesto EspecÃ­fico - Ley 18.502 ($/litro)</strong>
     <div style="display:flex; gap:2rem; margin-top:0.5rem; flex-wrap:wrap; align-items:center;">
       <div>
         <label style="font-size:0.82rem; color:#666;">Diesel:</label>
@@ -276,7 +276,7 @@
         <label style="font-size:0.82rem; color:#666;">Gas 97:</label>
         <input type="number" id="taxGas97" value="390" step="0.1" style="width:80px; padding:0.3rem; border:1px solid #ccc; border-radius:4px;" onchange="renderAll()">
       </div>
-      <span style="font-size:0.75rem; color:#999;">Ajusta las tasas según publicación SII/ENAP vigente</span>
+      <span style="font-size:0.75rem; color:#999;">Ajusta las tasas segÃºn publicaciÃ³n SII/ENAP vigente</span>
     </div>
   </div>
 
@@ -293,15 +293,15 @@
           <th>Tipo Combustible</th>
           <th class="text-right">Monto Neto</th>
           <th class="text-right">IVA</th>
-          <th class="text-right">Imp. Específico</th>
+          <th class="text-right">Imp. EspecÃ­fico</th>
           <th class="text-right">Monto Total</th>
           <th>Destino (CC)</th>
           <th>Destino (Emp)</th>
           <th>Tipo Doc.</th>
-          <th>N° Folio</th>
+          <th>NÂ° Folio</th>
           <th>Conductor</th>
           <th>Patente</th>
-          <th>Estación</th>
+          <th>EstaciÃ³n</th>
           <th>Doc.</th>
         </tr>
       </thead>
@@ -333,15 +333,15 @@
   </div>
 
   <script>
-    // ──── State ─────────────────────────────────────────────────────────────
+    // ââââ State âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
     let currentData = null;
     let allMonths = [];
     let filteredRows = [];
 
-    // ──── Init ──────────────────────────────────────────────────────────────
+    // ââââ Init ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
     async function init() {
       try {
-        // Cargar índice de meses disponibles
+        // Cargar Ã­ndice de meses disponibles
         const indexRes = await fetch('data/index.json');
         if (!indexRes.ok) {
           showEmpty('No hay datos disponibles. Ejecuta el scraper primero.');
@@ -354,7 +354,7 @@
           document.getElementById('empresaName').textContent = index.empresa;
         }
 
-        // Mostrar última actualización
+        // Mostrar Ãºltima actualizaciÃ³n
         if (index.lastUpdated) {
           const d = new Date(index.lastUpdated);
           const fmt = d.toLocaleString('es-CL', {
@@ -362,7 +362,7 @@
             hour: '2-digit', minute: '2-digit', hour12: false,
             timeZone: 'America/Santiago'
           });
-          document.getElementById('lastUpdated').textContent = 'Última actualización: ' + fmt;
+          document.getElementById('lastUpdated').textContent = 'Ãltima actualizaciÃ³n: ' + fmt;
         }
 
         // Poblar selector de meses
@@ -399,7 +399,7 @@
       }
     }
 
-    // ──── Render ────────────────────────────────────────────────────────────
+    // ââââ Render ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
     function renderAll() {
       if (!currentData || !currentData.transactions) {
         showEmpty('Sin datos para este mes');
@@ -416,11 +416,11 @@
         const montoTotal = parseFloat(tx.monto || d.montoTotal || d.monto || 0);
         const tipoCombustible = d.combustible || d.tipoCombustible || tx.tipoCombustible || '';
 
-        // ═══ Cálculo tributario Ley 18.502 ═══
-        // El montoTotal de Copec incluye todo (neto + imp específico + IVA)
+        // âââ CÃ¡lculo tributario Ley 18.502 âââ
+        // El montoTotal de Copec incluye todo (neto + imp especÃ­fico + IVA)
         // Estructura: montoTotal = (precioNeto + impEspecifico) * 1.19
         //
-        // Descomposición:
+        // DescomposiciÃ³n:
         //   baseImponible = montoTotal / 1.19
         //   IVA = montoTotal - baseImponible
         //   impEspecifico = litros * tasa_por_litro (configurable)
@@ -431,7 +431,7 @@
         const iva = montoTotal - baseImponible;
         const montoNeto = baseImponible - impEspecifico;
 
-        // Diesel = recuperable para empresas elegibles (construcción, transporte, etc.)
+        // Diesel = recuperable para empresas elegibles (construcciÃ³n, transporte, etc.)
         // Gasolinas = no recuperable
         const esRecuperable = tipoCombustible.toUpperCase().includes('DIESEL');
 
@@ -488,7 +488,7 @@
       const dieselLitros = filteredRows.filter(r => r.tipoCombustible.toUpperCase().includes('DIESEL')).reduce((s, r) => s + r.litros, 0);
       const gasLitros = filteredRows.filter(r => r.tipoCombustible.toUpperCase().includes('GAS')).reduce((s, r) => s + r.litros, 0);
 
-      // Impuesto específico recuperable vs no recuperable
+      // Impuesto especÃ­fico recuperable vs no recuperable
       const impRecuperable = filteredRows.filter(r => r.esRecuperable).reduce((s, r) => s + r.impEspecifico, 0);
       const impNoRecuperable = filteredRows.filter(r => !r.esRecuperable).reduce((s, r) => s + r.impEspecifico, 0);
 
@@ -513,7 +513,7 @@
         <div class="stat-card" style="border-left: 4px solid #2e7d32;">
           <div class="label">Imp. Recuperable</div>
           <div class="value" style="color:#2e7d32;">$${formatNumber(impRecuperable, 0)}</div>
-          <div class="sub">Diesel - Crédito fiscal</div>
+          <div class="sub">Diesel - CrÃ©dito fiscal</div>
         </div>
         <div class="stat-card">
           <div class="label">Total</div>
@@ -528,7 +528,7 @@
       const tfoot = document.getElementById('tableFoot');
 
       if (filteredRows.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="17" class="empty-state">Sin transacciones para este período</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="17" class="empty-state">Sin transacciones para este perÃ­odo</td></tr>';
         tfoot.style.display = 'none';
         return;
       }
@@ -551,7 +551,7 @@
           <td>${r.conductor}</td>
           <td>${r.patente}</td>
           <td>${r.estacion}</td>
-          <td>${r.docUrl ? `<a class="link-doc" href="${r.docUrl}" target="_blank">Ver</a>` : ''}</td>
+          <td>${r.docUrl && r.docUrl.startsWith('http') ? `<a class="link-doc" href="${r.docUrl}" target="_blank">Ver</a>` : ''}</td>
         </tr>
       `).join('');
 
@@ -587,14 +587,14 @@
         </div>
         <div>
           <div class="resumen-item"><span class="rlabel">Total</span><span class="rvalue">$${formatNumber(totalMonto, 0)}</span></div>
-          <div class="resumen-item"><span class="rlabel">N° Transacciones</span><span class="rvalue">${filteredRows.length}</span></div>
-          <div class="resumen-item"><span class="rlabel">Última actualización</span><span class="rvalue">${currentData.extractedAt ? new Date(currentData.extractedAt).toLocaleDateString('es-CL') : '-'}</span></div>
+          <div class="resumen-item"><span class="rlabel">NÂ° Transacciones</span><span class="rvalue">${filteredRows.length}</span></div>
+          <div class="resumen-item"><span class="rlabel">Ãltima actualizaciÃ³n</span><span class="rvalue">${currentData.extractedAt ? new Date(currentData.extractedAt).toLocaleDateString('es-CL') : '-'}</span></div>
         </div>
       `;
       section.style.display = '';
     }
 
-    // ──── Export Excel ──────────────────────────────────────────────────────
+    // ââââ Export Excel ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
     function exportToExcel() {
       if (!filteredRows.length) return alert('No hay datos para exportar');
 
@@ -611,15 +611,15 @@
         'TIPO DE COMBUSTIBLE': r.tipoCombustible,
         'MONTO NETO': r.montoNeto,
         'IMPUESTO (IVA)': r.iva,
-        'IMP. ESPECÍFICO LEY 18.502': r.impEspecifico,
+        'IMP. ESPECÃFICO LEY 18.502': r.impEspecifico,
         'MONTO TOTAL': r.montoTotal,
         'DESTINO (CC)': r.destinoCC,
         'DESTINO (EMP)': r.destinoEmp,
         'TIPO DOCUMENTO': r.tipoDocumento,
-        'N° FOLIO': r.nFolio,
+        'NÂ° FOLIO': r.nFolio,
         'COMPRADOR': r.conductor,
         'PATENTE': r.patente,
-        'ESTACIÓN': r.estacion
+        'ESTACIÃN': r.estacion
       }));
 
       // Agregar fila de totales
@@ -638,7 +638,7 @@
         'TIPO DE COMBUSTIBLE': '',
         'MONTO NETO': totNeto,
         'IMPUESTO (IVA)': totIVA,
-        'IMP. ESPECÍFICO LEY 18.502': totImpRecup,
+        'IMP. ESPECÃFICO LEY 18.502': totImpRecup,
         'MONTO TOTAL': totMonto
       });
 
@@ -665,7 +665,7 @@
       XLSX.writeFile(wb, `Libro_Combustible_${month}.xlsx`);
     }
 
-    // ──── Helpers ────────────────────────────────────────────────────────────
+    // ââââ Helpers ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
     function formatNumber(n, decimals) {
       if (n === null || n === undefined || isNaN(n)) return '0';
       return Number(n).toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
@@ -699,12 +699,12 @@
       document.getElementById('tableFoot').style.display = 'none';
     }
 
-    // ──── Event Listeners ────────────────────────────────────────────────────
+    // ââââ Event Listeners ââââââââââââââââââââââââââââââââââââââââââââââââââââ
     document.getElementById('monthSelect').addEventListener('change', (e) => loadMonth(e.target.value));
     document.getElementById('fuelFilter').addEventListener('change', renderAll);
     document.getElementById('searchInput').addEventListener('input', renderAll);
 
-    // ──── Tasas impuesto específico ──────────────────────────────────────────
+    // ââââ Tasas impuesto especÃ­fico ââââââââââââââââââââââââââââââââââââââââââ
     function getTasaEspecifica(tipoCombustible) {
       const fuel = (tipoCombustible || '').toUpperCase();
       if (fuel.includes('DIESEL')) return parseFloat(document.getElementById('taxDiesel')?.value) || 120;
@@ -719,719 +719,7 @@
       el.style.display = el.style.display === 'none' ? 'block' : 'none';
     }
 
-    // ──── Start ─────────────────────────────────────────────────────────────
-    init();
-  </script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Copec Empresa - Libro Combustible</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <style>
-    :root {
-      --copec-blue: #1a237e;
-      --copec-light: #3949ab;
-      --copec-cyan: #00bcd4;
-      --bg: #f5f5f5;
-      --card: #ffffff;
-      --text: #212121;
-      --text-muted: #757575;
-      --border: #e0e0e0;
-      --success: #4caf50;
-      --warning: #ff9800;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.5;
-    }
-
-    /* Header */
-    .header {
-      background: linear-gradient(135deg, var(--copec-blue), var(--copec-light));
-      color: white;
-      padding: 1.5rem 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }
-    .header h1 { font-size: 1.5rem; font-weight: 600; }
-    .header .subtitle { font-size: 0.85rem; opacity: 0.8; margin-top: 0.25rem; }
-    .header .empresa { font-size: 0.9rem; opacity: 0.9; }
-
-    /* Controls */
-    .controls {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1.25rem 2rem;
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-      flex-wrap: wrap;
-    }
-    .controls label { font-weight: 500; font-size: 0.9rem; }
-    .controls select, .controls input {
-      padding: 0.5rem 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 0.9rem;
-      background: white;
-    }
-    .btn {
-      padding: 0.5rem 1.25rem;
-      border: none;
-      border-radius: 6px;
-      font-size: 0.875rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-primary {
-      background: var(--copec-blue);
-      color: white;
-    }
-    .btn-primary:hover { background: var(--copec-light); }
-    .btn-success {
-      background: var(--success);
-      color: white;
-    }
-    .btn-success:hover { opacity: 0.9; }
-
-    /* Stats */
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 1rem;
-      padding: 1.25rem 2rem;
-    }
-    .stat-card {
-      background: var(--card);
-      border-radius: 10px;
-      padding: 1rem 1.25rem;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-    }
-    .stat-card .label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    .stat-card .value { font-size: 1.5rem; font-weight: 700; color: var(--copec-blue); margin-top: 0.25rem; }
-    .stat-card .sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
-
-    /* Table */
-    .table-container {
-      margin: 0 2rem 2rem;
-      background: var(--card);
-      border-radius: 10px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-      overflow-x: auto;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.82rem;
-    }
-    thead th {
-      background: var(--copec-blue);
-      color: white;
-      padding: 0.75rem 0.5rem;
-      text-align: left;
-      font-weight: 500;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-      position: sticky;
-      top: 0;
-      white-space: nowrap;
-    }
-    tbody td {
-      padding: 0.6rem 0.5rem;
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-    }
-    tbody tr:hover { background: #f0f4ff; }
-    tbody tr:nth-child(even) { background: #fafafa; }
-    tbody tr:nth-child(even):hover { background: #f0f4ff; }
-
-    .text-right { text-align: right; }
-    .text-center { text-align: center; }
-
-    .badge {
-      display: inline-block;
-      padding: 0.15rem 0.5rem;
-      border-radius: 10px;
-      font-size: 0.72rem;
-      font-weight: 600;
-    }
-    .badge-diesel { background: #fff3e0; color: #e65100; }
-    .badge-gas93 { background: #e8f5e9; color: #2e7d32; }
-    .badge-gas95 { background: #e3f2fd; color: #1565c0; }
-    .badge-gas97 { background: #f3e5f5; color: #7b1fa2; }
-
-    .link-doc {
-      color: var(--copec-light);
-      text-decoration: none;
-      font-weight: 500;
-    }
-    .link-doc:hover { text-decoration: underline; }
-
-    /* Footer totals */
-    tfoot td {
-      padding: 0.75rem 0.5rem;
-      font-weight: 700;
-      background: #e8eaf6;
-      border-top: 2px solid var(--copec-blue);
-    }
-
-    /* Loading */
-    .loading {
-      text-align: center;
-      padding: 4rem 2rem;
-      color: var(--text-muted);
-    }
-    .loading .spinner {
-      width: 40px; height: 40px;
-      border: 4px solid var(--border);
-      border-top-color: var(--copec-cyan);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 1rem;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .empty-state {
-      text-align: center;
-      padding: 4rem 2rem;
-      color: var(--text-muted);
-    }
-    .empty-state svg { width: 64px; height: 64px; fill: var(--border); margin-bottom: 1rem; }
-
-    /* Resumen impuestos */
-    .resumen-section {
-      margin: 0 2rem 2rem;
-      background: var(--card);
-      border-radius: 10px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-      padding: 1.5rem;
-    }
-    .resumen-section h3 {
-      font-size: 1rem;
-      color: var(--copec-blue);
-      margin-bottom: 1rem;
-    }
-    .resumen-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 0.75rem;
-    }
-    .resumen-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.5rem 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .resumen-item .rlabel { color: var(--text-muted); font-size: 0.85rem; }
-    .resumen-item .rvalue { font-weight: 600; font-size: 0.95rem; }
-
-    @media (max-width: 768px) {
-      .header { flex-direction: column; gap: 0.5rem; }
-      .controls { flex-direction: column; align-items: stretch; }
-      .stats { grid-template-columns: repeat(2, 1fr); }
-      .table-container { margin: 0 0.5rem 1rem; }
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div>
-      <h1>Libro Combustible - Ley N° 18.502</h1>
-      <div class="subtitle">Registro de transacciones Copec Empresa</div>
-    </div>
-    <div class="empresa" id="empresaName">Constructora Colbun</div>
-  </div>
-
-  <div class="controls">
-    <label for="monthSelect">Mes:</label>
-    <select id="monthSelect"></select>
-
-    <label for="fuelFilter">Combustible:</label>
-    <select id="fuelFilter">
-      <option value="">Todos</option>
-      <option value="DIESEL">Diesel</option>
-      <option value="GAS 93">Gas 93</option>
-      <option value="GAS 95">Gas 95</option>
-      <option value="GAS 97">Gas 97</option>
-    </select>
-
-    <label for="searchInput">Buscar:</label>
-    <input type="text" id="searchInput" placeholder="Conductor, patente...">
-
-    <div style="margin-left: auto; display: flex; gap: 0.5rem;">
-      <button class="btn" style="background:#ff9800;color:white;" onclick="toggleTaxConfig()">Tasas Imp.</button>
-      <button class="btn btn-success" onclick="exportToExcel()">
-        📥 Exportar Excel
-      </button>
-    </div>
-  </div>
-
-  <!-- Panel de configuracion de tasas impuesto especifico -->
-  <div id="taxConfig" style="display:none; background:#fff8e1; border-left:4px solid #ff9800; padding:1rem 2rem; margin:0 0 0;">
-    <strong style="font-size:0.9rem;">Tasas Impuesto Específico - Ley 18.502 ($/litro)</strong>
-    <div style="display:flex; gap:2rem; margin-top:0.5rem; flex-wrap:wrap; align-items:center;">
-      <div>
-        <label style="font-size:0.82rem; color:#666;">Diesel:</label>
-        <input type="number" id="taxDiesel" value="120" step="0.1" style="width:80px; padding:0.3rem; border:1px solid #ccc; border-radius:4px;" onchange="renderAll()">
-      </div>
-      <div>
-        <label style="font-size:0.82rem; color:#666;">Gas 93:</label>
-        <input type="number" id="taxGas93" value="390" step="0.1" style="width:80px; padding:0.3rem; border:1px solid #ccc; border-radius:4px;" onchange="renderAll()">
-      </div>
-      <div>
-        <label style="font-size:0.82rem; color:#666;">Gas 95:</label>
-        <input type="number" id="taxGas95" value="390" step="0.1" style="width:80px; padding:0.3rem; border:1px solid #ccc; border-radius:4px;" onchange="renderAll()">
-      </div>
-      <div>
-        <label style="font-size:0.82rem; color:#666;">Gas 97:</label>
-        <input type="number" id="taxGas97" value="390" step="0.1" style="width:80px; padding:0.3rem; border:1px solid #ccc; border-radius:4px;" onchange="renderAll()">
-      </div>
-      <span style="font-size:0.75rem; color:#999;">Ajusta las tasas según publicación SII/ENAP vigente</span>
-    </div>
-  </div>
-
-  <div class="stats" id="statsContainer"></div>
-
-  <div class="table-container">
-    <table id="mainTable">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Factura</th>
-          <th>Cant. Lts</th>
-          <th>P.U.</th>
-          <th>Tipo Combustible</th>
-          <th class="text-right">Monto Neto</th>
-          <th class="text-right">IVA</th>
-          <th class="text-right">Imp. Específico</th>
-          <th class="text-right">Monto Total</th>
-          <th>Destino (CC)</th>
-          <th>Destino (Emp)</th>
-          <th>Tipo Doc.</th>
-          <th>N° Folio</th>
-          <th>Conductor</th>
-          <th>Patente</th>
-          <th>Estación</th>
-          <th>Doc.</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody">
-        <tr><td colspan="17" class="loading">
-          <div class="spinner"></div>
-          Cargando datos...
-        </td></tr>
-      </tbody>
-      <tfoot id="tableFoot" style="display: none;">
-        <tr>
-          <td colspan="2"><strong>TOTALES</strong></td>
-          <td id="totalLitros" class="text-right"></td>
-          <td></td>
-          <td></td>
-          <td id="totalNeto" class="text-right"></td>
-          <td id="totalIVA" class="text-right"></td>
-          <td id="totalImpRecup" class="text-right"></td>
-          <td id="totalMonto" class="text-right"></td>
-          <td colspan="8"></td>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
-
-  <div class="resumen-section" id="resumenSection" style="display: none;">
-    <h3>Resumen de la Factura</h3>
-    <div class="resumen-grid" id="resumenGrid"></div>
-  </div>
-
-  <script>
-    // ─── State ──────────────────────────────────────────────────────────
-    let currentData = null;
-    let allMonths = [];
-    let filteredRows = [];
-
-    // ─── Init ───────────────────────────────────────────────────────────
-    async function init() {
-      try {
-        // Cargar índice de meses disponibles
-        const indexRes = await fetch('data/index.json');
-        if (!indexRes.ok) {
-          showEmpty('No hay datos disponibles. Ejecuta el scraper primero.');
-          return;
-        }
-        const index = await indexRes.json();
-        allMonths = index.months || [];
-
-        if (index.empresa) {
-          document.getElementById('empresaName').textContent = index.empresa;
-        }
-
-        // Poblar selector de meses
-        const select = document.getElementById('monthSelect');
-        allMonths.forEach(m => {
-          const opt = document.createElement('option');
-          opt.value = m;
-          const [y, mo] = m.split('-');
-          const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-          opt.textContent = `${monthNames[parseInt(mo) - 1]} ${y}`;
-          select.appendChild(opt);
-        });
-
-        // Cargar primer mes
-        if (allMonths.length > 0) {
-          await loadMonth(allMonths[0]);
-        } else {
-          showEmpty('No hay meses disponibles.');
-        }
-
-      } catch (e) {
-        showEmpty('Error cargando datos: ' + e.message);
-      }
-    }
-
-    async function loadMonth(month) {
-      try {
-        const res = await fetch(`data/${month}.json`);
-        if (!res.ok) throw new Error('Archivo no encontrado');
-        currentData = await res.json();
-        renderAll();
-      } catch (e) {
-        showEmpty('Error cargando mes: ' + e.message);
-      }
-    }
-
-    // ─── Render ─────────────────────────────────────────────────────────
-    function renderAll() {
-      if (!currentData || !currentData.transactions) {
-        showEmpty('Sin datos para este mes');
-        return;
-      }
-
-      const fuelFilter = document.getElementById('fuelFilter').value;
-      const search = document.getElementById('searchInput').value.toLowerCase();
-
-      // Transformar transacciones a filas
-      filteredRows = currentData.transactions.map(tx => {
-        const d = tx.detail || {};
-        const litros = parseFloat(tx.litros || d.cantidad || d.litros || 0);
-        const montoTotal = parseFloat(tx.monto || d.montoTotal || d.monto || 0);
-        const tipoCombustible = d.combustible || d.tipoCombustible || tx.tipoCombustible || '';
-
-        // ═══ Cálculo tributario Ley 18.502 ═══
-        // El montoTotal de Copec incluye todo (neto + imp específico + IVA)
-        // Estructura: montoTotal = (precioNeto + impEspecifico) * 1.19
-        //
-        // Descomposición:
-        //   baseImponible = montoTotal / 1.19
-        //   IVA = montoTotal - baseImponible
-        //   impEspecifico = litros * tasa_por_litro (configurable)
-        //   precioNeto = baseImponible - impEspecifico
-        const tasaEspecifica = getTasaEspecifica(tipoCombustible);
-        const impEspecifico = Math.round(litros * tasaEspecifica);
-        const baseImponible = Math.round(montoTotal / 1.19);
-        const iva = montoTotal - baseImponible;
-        const montoNeto = baseImponible - impEspecifico;
-
-        // Diesel = recuperable para empresas elegibles (construcción, transporte, etc.)
-        // Gasolinas = no recuperable
-        const esRecuperable = tipoCombustible.toUpperCase().includes('DIESEL');
-
-        return {
-          fecha: tx.fecha || tx.fechaTransaccion || d.fecha || '',
-          factura: tx.nroDocumento || d.nroDocumento || d.folioDocumento || '',
-          litros: litros,
-          precioUnitario: litros > 0 ? Math.round(montoNeto / litros) : 0,
-          tipoCombustible: tipoCombustible,
-          montoNeto: montoNeto,
-          iva: iva,
-          impEspecifico: impEspecifico,
-          esRecuperable: esRecuperable,
-          montoTotal: montoTotal,
-          destinoCC: d.estacion || tx.estacion || '',
-          destinoEmp: d.direccion || d.sucursal || '',
-          tipoDocumento: tx.tipoDocumento || d.tipoDocumento || 'Guia de despacho',
-          nFolio: tx.nroDocumento || d.folioDocumento || d.nroDocumento || '',
-          conductor: tx.conductor || d.conductor || tx.nombreConductor || '',
-          patente: tx.patente || d.patente || '',
-          estacion: d.nombreEstacion || d.estacion || '',
-          docUrl: tx.urlDocumento || d.urlDocumento || d.urlAcepta || '',
-          odometro: tx.odometro || d.odometro || ''
-        };
-      });
-
-      // Aplicar filtros
-      if (fuelFilter) {
-        filteredRows = filteredRows.filter(r =>
-          r.tipoCombustible.toUpperCase().includes(fuelFilter.toUpperCase())
-        );
-      }
-      if (search) {
-        filteredRows = filteredRows.filter(r =>
-          r.conductor.toLowerCase().includes(search) ||
-          r.patente.toLowerCase().includes(search) ||
-          r.factura.toString().includes(search) ||
-          r.estacion.toLowerCase().includes(search)
-        );
-      }
-
-      renderStats();
-      renderTable();
-      renderResumen();
-    }
-
-    function renderStats() {
-      const stats = document.getElementById('statsContainer');
-      const totalLitros = filteredRows.reduce((sum, r) => sum + r.litros, 0);
-      const totalMonto = filteredRows.reduce((sum, r) => sum + r.montoTotal, 0);
-      const totalNeto = filteredRows.reduce((sum, r) => sum + r.montoNeto, 0);
-      const totalIVA = filteredRows.reduce((sum, r) => sum + r.iva, 0);
-
-      const dieselLitros = filteredRows.filter(r => r.tipoCombustible.toUpperCase().includes('DIESEL')).reduce((s, r) => s + r.litros, 0);
-      const gasLitros = filteredRows.filter(r => r.tipoCombustible.toUpperCase().includes('GAS')).reduce((s, r) => s + r.litros, 0);
-
-      // Impuesto específico recuperable vs no recuperable
-      const impRecuperable = filteredRows.filter(r => r.esRecuperable).reduce((s, r) => s + r.impEspecifico, 0);
-      const impNoRecuperable = filteredRows.filter(r => !r.esRecuperable).reduce((s, r) => s + r.impEspecifico, 0);
-
-      stats.innerHTML = `
-        <div class="stat-card">
-          <div class="label">Transacciones</div>
-          <div class="value">${filteredRows.length}</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">Total Litros</div>
-          <div class="value">${formatNumber(totalLitros, 2)}</div>
-          <div class="sub">Diesel: ${formatNumber(dieselLitros, 2)} | Gas: ${formatNumber(gasLitros, 2)}</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">Monto Neto</div>
-          <div class="value">$${formatNumber(totalNeto, 0)}</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">IVA</div>
-          <div class="value">$${formatNumber(totalIVA, 0)}</div>
-        </div>
-        <div class="stat-card" style="border-left: 4px solid #2e7d32;">
-          <div class="label">Imp. Recuperable</div>
-          <div class="value" style="color:#2e7d32;">$${formatNumber(impRecuperable, 0)}</div>
-          <div class="sub">Diesel - Crédito fiscal</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">Total</div>
-          <div class="value">$${formatNumber(totalMonto, 0)}</div>
-          <div class="sub">Imp. no recup: $${formatNumber(impNoRecuperable, 0)}</div>
-        </div>
-      `;
-    }
-
-    function renderTable() {
-      const tbody = document.getElementById('tableBody');
-      const tfoot = document.getElementById('tableFoot');
-
-      if (filteredRows.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="17" class="empty-state">Sin transacciones para este período</td></tr>';
-        tfoot.style.display = 'none';
-        return;
-      }
-
-      tbody.innerHTML = filteredRows.map(r => `
-        <tr>
-          <td>${formatFecha(r.fecha)}</td>
-          <td>${r.factura}</td>
-          <td class="text-right">${formatNumber(r.litros, 2)}</td>
-          <td class="text-right">${formatNumber(r.precioUnitario, 0)}</td>
-          <td><span class="badge ${getBadgeClass(r.tipoCombustible)}">${r.tipoCombustible}</span></td>
-          <td class="text-right">${formatNumber(r.montoNeto, 0)}</td>
-          <td class="text-right">${formatNumber(r.iva, 0)}</td>
-          <td class="text-right">${formatNumber(r.impEspecifico, 0)} <span style="font-size:0.65rem;font-weight:600;color:${r.esRecuperable ? '#2e7d32' : '#c62828'}">${r.esRecuperable ? '(R)' : '(NR)'}</span></td>
-          <td class="text-right"><strong>${formatNumber(r.montoTotal, 0)}</strong></td>
-          <td>${r.destinoCC}</td>
-          <td>${r.destinoEmp}</td>
-          <td>${r.tipoDocumento}</td>
-          <td>${r.nFolio}</td>
-          <td>${r.conductor}</td>
-          <td>${r.patente}</td>
-          <td>${r.estacion}</td>
-          <td>${r.docUrl ? `<a class="link-doc" href="${r.docUrl}" target="_blank">Ver</a>` : ''}</td>
-        </tr>
-      `).join('');
-
-      // Totales
-      const totLitros = filteredRows.reduce((s, r) => s + r.litros, 0);
-      const totNeto = filteredRows.reduce((s, r) => s + r.montoNeto, 0);
-      const totIVA = filteredRows.reduce((s, r) => s + r.iva, 0);
-      const totImpRecup = filteredRows.reduce((s, r) => s + r.impEspecifico, 0);
-      const totMonto = filteredRows.reduce((s, r) => s + r.montoTotal, 0);
-
-      document.getElementById('totalLitros').textContent = formatNumber(totLitros, 2);
-      document.getElementById('totalNeto').textContent = '$' + formatNumber(totNeto, 0);
-      document.getElementById('totalIVA').textContent = '$' + formatNumber(totIVA, 0);
-      document.getElementById('totalImpRecup').textContent = '$' + formatNumber(totImpRecup, 0);
-      document.getElementById('totalMonto').textContent = '$' + formatNumber(totMonto, 0);
-      tfoot.style.display = '';
-    }
-
-    function renderResumen() {
-      const section = document.getElementById('resumenSection');
-      const grid = document.getElementById('resumenGrid');
-
-      const totalNeto = filteredRows.reduce((s, r) => s + r.montoNeto, 0);
-      const totalIVA = filteredRows.reduce((s, r) => s + r.iva, 0);
-      const totalMonto = filteredRows.reduce((s, r) => s + r.montoTotal, 0);
-      const totalLitros = filteredRows.reduce((s, r) => s + r.litros, 0);
-
-      grid.innerHTML = `
-        <div>
-          <div class="resumen-item"><span class="rlabel">Total Litros</span><span class="rvalue">${formatNumber(totalLitros, 2)}</span></div>
-          <div class="resumen-item"><span class="rlabel">Neto</span><span class="rvalue">$${formatNumber(totalNeto, 0)}</span></div>
-          <div class="resumen-item"><span class="rlabel">IVA (19%)</span><span class="rvalue">$${formatNumber(totalIVA, 0)}</span></div>
-        </div>
-        <div>
-          <div class="resumen-item"><span class="rlabel">Total</span><span class="rvalue">$${formatNumber(totalMonto, 0)}</span></div>
-          <div class="resumen-item"><span class="rlabel">N° Transacciones</span><span class="rvalue">${filteredRows.length}</span></div>
-          <div class="resumen-item"><span class="rlabel">Última actualización</span><span class="rvalue">${currentData.extractedAt ? new Date(currentData.extractedAt).toLocaleDateString('es-CL') : '-'}</span></div>
-        </div>
-      `;
-      section.style.display = '';
-    }
-
-    // ─── Export Excel ───────────────────────────────────────────────────
-    function exportToExcel() {
-      if (!filteredRows.length) return alert('No hay datos para exportar');
-
-      const month = document.getElementById('monthSelect').value;
-      const [y, m] = month.split('-');
-      const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-
-      // Preparar datos para Excel
-      const excelData = filteredRows.map(r => ({
-        'FECHA': formatFecha(r.fecha),
-        'FACTURA': r.factura,
-        'CANTIDAD Lts': r.litros,
-        'P.U.': r.precioUnitario,
-        'TIPO DE COMBUSTIBLE': r.tipoCombustible,
-        'MONTO NETO': r.montoNeto,
-        'IMPUESTO (IVA)': r.iva,
-        'IMP. ESPECÍFICO LEY 18.502': r.impEspecifico,
-        'MONTO TOTAL': r.montoTotal,
-        'DESTINO (CC)': r.destinoCC,
-        'DESTINO (EMP)': r.destinoEmp,
-        'TIPO DOCUMENTO': r.tipoDocumento,
-        'N° FOLIO': r.nFolio,
-        'COMPRADOR': r.conductor,
-        'PATENTE': r.patente,
-        'ESTACIÓN': r.estacion
-      }));
-
-      // Agregar fila de totales
-      const totLitros = filteredRows.reduce((s, r) => s + r.litros, 0);
-      const totNeto = filteredRows.reduce((s, r) => s + r.montoNeto, 0);
-      const totIVA = filteredRows.reduce((s, r) => s + r.iva, 0);
-      const totImpRecup = filteredRows.reduce((s, r) => s + r.impEspecifico, 0);
-      const totMonto = filteredRows.reduce((s, r) => s + r.montoTotal, 0);
-
-      excelData.push({});
-      excelData.push({
-        'FECHA': 'TOTALES',
-        'FACTURA': filteredRows.length,
-        'CANTIDAD Lts': totLitros,
-        'P.U.': '',
-        'TIPO DE COMBUSTIBLE': '',
-        'MONTO NETO': totNeto,
-        'IMPUESTO (IVA)': totIVA,
-        'IMP. ESPECÍFICO LEY 18.502': totImpRecup,
-        'MONTO TOTAL': totMonto
-      });
-
-      // Resumen
-      excelData.push({});
-      excelData.push({ 'FECHA': 'RESUMEN DE LA FACTURA' });
-      excelData.push({ 'FECHA': 'TOTAL', 'FACTURA': totMonto });
-      excelData.push({ 'FECHA': 'NETO', 'FACTURA': totNeto });
-      excelData.push({ 'FECHA': 'IVA', 'FACTURA': totIVA });
-
-      const ws = XLSX.utils.json_to_sheet(excelData);
-
-      // Ajustar anchos de columna
-      ws['!cols'] = [
-        { wch: 18 }, { wch: 12 }, { wch: 12 }, { wch: 8 }, { wch: 16 },
-        { wch: 14 }, { wch: 14 }, { wch: 24 }, { wch: 14 },
-        { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 12 },
-        { wch: 24 }, { wch: 10 }, { wch: 16 }
-      ];
-
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, `${monthNames[parseInt(m) - 1]} ${y}`);
-
-      XLSX.writeFile(wb, `Libro_Combustible_${month}.xlsx`);
-    }
-
-    // ─── Helpers ─────────────────────────────────────────────────────────
-    function formatNumber(n, decimals) {
-      if (n === null || n === undefined || isNaN(n)) return '0';
-      return Number(n).toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-    }
-
-    function formatFecha(fecha) {
-      if (!fecha) return '';
-      // Intenta parsear diferentes formatos
-      if (typeof fecha === 'string') {
-        if (fecha.includes('T')) {
-          return new Date(fecha).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-        }
-        return fecha;
-      }
-      return fecha;
-    }
-
-    function getBadgeClass(fuel) {
-      if (!fuel) return '';
-      const f = fuel.toUpperCase();
-      if (f.includes('DIESEL')) return 'badge-diesel';
-      if (f.includes('93')) return 'badge-gas93';
-      if (f.includes('95')) return 'badge-gas95';
-      if (f.includes('97')) return 'badge-gas97';
-      return '';
-    }
-
-    function showEmpty(msg) {
-      document.getElementById('tableBody').innerHTML =
-        `<tr><td colspan="17" class="empty-state">${msg}</td></tr>`;
-      document.getElementById('tableFoot').style.display = 'none';
-    }
-
-    // ─── Event Listeners ────────────────────────────────────────────────
-    document.getElementById('monthSelect').addEventListener('change', (e) => loadMonth(e.target.value));
-    document.getElementById('fuelFilter').addEventListener('change', renderAll);
-    document.getElementById('searchInput').addEventListener('input', renderAll);
-
-    // ─── Tasas impuesto específico ───────────────────────────────────────
-    function getTasaEspecifica(tipoCombustible) {
-      const fuel = (tipoCombustible || '').toUpperCase();
-      if (fuel.includes('DIESEL')) return parseFloat(document.getElementById('taxDiesel')?.value) || 120;
-      if (fuel.includes('93')) return parseFloat(document.getElementById('taxGas93')?.value) || 390;
-      if (fuel.includes('95')) return parseFloat(document.getElementById('taxGas95')?.value) || 390;
-      if (fuel.includes('97')) return parseFloat(document.getElementById('taxGas97')?.value) || 390;
-      return 0;
-    }
-
-    function toggleTaxConfig() {
-      const el = document.getElementById('taxConfig');
-      el.style.display = el.style.display === 'none' ? 'block' : 'none';
-    }
-
-    // ─── Start ──────────────────────────────────────────────────────────
+    // ââââ Start âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
     init();
   </script>
 </body>
