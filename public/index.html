@@ -223,12 +223,12 @@
 <body>
   <div class="header">
     <div>
-      <h1>Libro Combustible - Ley NÂ° 18.502</h1>
+      <h1>Libro Combustible - Ley N° 18.502</h1>
       <div class="subtitle">Registro de transacciones Copec Empresa</div>
     </div>
     <div style="text-align:right;">
       <div class="empresa" id="empresaName">Constructora Colbun</div>
-      <div id="lastUpdated" style="font-size:0.75rem; opacity:0.85; margin-top:0.25rem;">Ãltima actualizaciÃ³n: â</div>
+      <div id="lastUpdated" style="font-size:0.75rem; opacity:0.85; margin-top:0.25rem;">Última actualización: —</div>
     </div>
   </div>
 
@@ -251,14 +251,14 @@
     <div style="margin-left: auto; display: flex; gap: 0.5rem;">
       <button class="btn" style="background:#ff9800;color:white;" onclick="toggleTaxConfig()">Tasas Imp.</button>
       <button class="btn btn-success" onclick="exportToExcel()">
-        ð¥ Exportar Excel
+        📥 Exportar Excel
       </button>
     </div>
   </div>
 
   <!-- Panel de configuracion de tasas impuesto especifico -->
   <div id="taxConfig" style="display:none; background:#fff8e1; border-left:4px solid #ff9800; padding:1rem 2rem; margin:0 0 0;">
-    <strong style="font-size:0.9rem;">Tasas Impuesto EspecÃ­fico - Ley 18.502 ($/litro)</strong>
+    <strong style="font-size:0.9rem;">Tasas Impuesto Específico - Ley 18.502 ($/litro)</strong>
     <div style="display:flex; gap:2rem; margin-top:0.5rem; flex-wrap:wrap; align-items:center;">
       <div>
         <label style="font-size:0.82rem; color:#666;">Diesel:</label>
@@ -276,7 +276,7 @@
         <label style="font-size:0.82rem; color:#666;">Gas 97:</label>
         <input type="number" id="taxGas97" value="390" step="0.1" style="width:80px; padding:0.3rem; border:1px solid #ccc; border-radius:4px;" onchange="renderAll()">
       </div>
-      <span style="font-size:0.75rem; color:#999;">Ajusta las tasas segÃºn publicaciÃ³n SII/ENAP vigente</span>
+      <span style="font-size:0.75rem; color:#999;">Ajusta las tasas según publicación SII/ENAP vigente</span>
     </div>
   </div>
 
@@ -293,15 +293,15 @@
           <th>Tipo Combustible</th>
           <th class="text-right">Monto Neto</th>
           <th class="text-right">IVA</th>
-          <th class="text-right">Imp. EspecÃ­fico</th>
+          <th class="text-right">Imp. Específico</th>
           <th class="text-right">Monto Total</th>
           <th>Destino (CC)</th>
           <th>Destino (Emp)</th>
           <th>Tipo Doc.</th>
-          <th>NÂ° Folio</th>
+          <th>N° Folio</th>
           <th>Conductor</th>
           <th>Patente</th>
-          <th>EstaciÃ³n</th>
+          <th>Estación</th>
           <th>Doc.</th>
         </tr>
       </thead>
@@ -333,15 +333,15 @@
   </div>
 
   <script>
-    // ââââ State âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    // ──── State ─────────────────────────────────────────────────────────────
     let currentData = null;
     let allMonths = [];
     let filteredRows = [];
 
-    // ââââ Init ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    // ──── Init ──────────────────────────────────────────────────────────────
     async function init() {
       try {
-        // Cargar Ã­ndice de meses disponibles
+        // Cargar índice de meses disponibles
         const indexRes = await fetch('data/index.json');
         if (!indexRes.ok) {
           showEmpty('No hay datos disponibles. Ejecuta el scraper primero.');
@@ -354,7 +354,7 @@
           document.getElementById('empresaName').textContent = index.empresa;
         }
 
-        // Mostrar Ãºltima actualizaciÃ³n
+        // Mostrar última actualización
         if (index.lastUpdated) {
           const d = new Date(index.lastUpdated);
           const fmt = d.toLocaleString('es-CL', {
@@ -362,7 +362,7 @@
             hour: '2-digit', minute: '2-digit', hour12: false,
             timeZone: 'America/Santiago'
           });
-          document.getElementById('lastUpdated').textContent = 'Ãltima actualizaciÃ³n: ' + fmt;
+          document.getElementById('lastUpdated').textContent = 'Última actualización: ' + fmt;
         }
 
         // Poblar selector de meses
@@ -399,7 +399,7 @@
       }
     }
 
-    // ââââ Render ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    // ──── Render ────────────────────────────────────────────────────────────
     function renderAll() {
       if (!currentData || !currentData.transactions) {
         showEmpty('Sin datos para este mes');
@@ -416,11 +416,11 @@
         const montoTotal = parseFloat(tx.monto || d.montoTotal || d.monto || 0);
         const tipoCombustible = d.combustible || d.tipoCombustible || tx.tipoCombustible || '';
 
-        // âââ CÃ¡lculo tributario Ley 18.502 âââ
-        // El montoTotal de Copec incluye todo (neto + imp especÃ­fico + IVA)
+        // ═══ Cálculo tributario Ley 18.502 ═══
+        // El montoTotal de Copec incluye todo (neto + imp específico + IVA)
         // Estructura: montoTotal = (precioNeto + impEspecifico) * 1.19
         //
-        // DescomposiciÃ³n:
+        // Descomposición:
         //   baseImponible = montoTotal / 1.19
         //   IVA = montoTotal - baseImponible
         //   impEspecifico = litros * tasa_por_litro (configurable)
@@ -431,7 +431,7 @@
         const iva = montoTotal - baseImponible;
         const montoNeto = baseImponible - impEspecifico;
 
-        // Diesel = recuperable para empresas elegibles (construcciÃ³n, transporte, etc.)
+        // Diesel = recuperable para empresas elegibles (construcción, transporte, etc.)
         // Gasolinas = no recuperable
         const esRecuperable = tipoCombustible.toUpperCase().includes('DIESEL');
 
@@ -488,7 +488,7 @@
       const dieselLitros = filteredRows.filter(r => r.tipoCombustible.toUpperCase().includes('DIESEL')).reduce((s, r) => s + r.litros, 0);
       const gasLitros = filteredRows.filter(r => r.tipoCombustible.toUpperCase().includes('GAS')).reduce((s, r) => s + r.litros, 0);
 
-      // Impuesto especÃ­fico recuperable vs no recuperable
+      // Impuesto específico recuperable vs no recuperable
       const impRecuperable = filteredRows.filter(r => r.esRecuperable).reduce((s, r) => s + r.impEspecifico, 0);
       const impNoRecuperable = filteredRows.filter(r => !r.esRecuperable).reduce((s, r) => s + r.impEspecifico, 0);
 
@@ -513,7 +513,7 @@
         <div class="stat-card" style="border-left: 4px solid #2e7d32;">
           <div class="label">Imp. Recuperable</div>
           <div class="value" style="color:#2e7d32;">$${formatNumber(impRecuperable, 0)}</div>
-          <div class="sub">Diesel - CrÃ©dito fiscal</div>
+          <div class="sub">Diesel - Crédito fiscal</div>
         </div>
         <div class="stat-card">
           <div class="label">Total</div>
@@ -528,7 +528,7 @@
       const tfoot = document.getElementById('tableFoot');
 
       if (filteredRows.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="17" class="empty-state">Sin transacciones para este perÃ­odo</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="17" class="empty-state">Sin transacciones para este período</td></tr>';
         tfoot.style.display = 'none';
         return;
       }
@@ -587,14 +587,14 @@
         </div>
         <div>
           <div class="resumen-item"><span class="rlabel">Total</span><span class="rvalue">$${formatNumber(totalMonto, 0)}</span></div>
-          <div class="resumen-item"><span class="rlabel">NÂ° Transacciones</span><span class="rvalue">${filteredRows.length}</span></div>
-          <div class="resumen-item"><span class="rlabel">Ãltima actualizaciÃ³n</span><span class="rvalue">${currentData.extractedAt ? new Date(currentData.extractedAt).toLocaleDateString('es-CL') : '-'}</span></div>
+          <div class="resumen-item"><span class="rlabel">N° Transacciones</span><span class="rvalue">${filteredRows.length}</span></div>
+          <div class="resumen-item"><span class="rlabel">Última actualización</span><span class="rvalue">${currentData.extractedAt ? new Date(currentData.extractedAt).toLocaleDateString('es-CL') : '-'}</span></div>
         </div>
       `;
       section.style.display = '';
     }
 
-    // ââââ Export Excel ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    // ──── Export Excel ──────────────────────────────────────────────────────
     function exportToExcel() {
       if (!filteredRows.length) return alert('No hay datos para exportar');
 
@@ -611,15 +611,15 @@
         'TIPO DE COMBUSTIBLE': r.tipoCombustible,
         'MONTO NETO': r.montoNeto,
         'IMPUESTO (IVA)': r.iva,
-        'IMP. ESPECÃFICO LEY 18.502': r.impEspecifico,
+        'IMP. ESPECÍFICO LEY 18.502': r.impEspecifico,
         'MONTO TOTAL': r.montoTotal,
         'DESTINO (CC)': r.destinoCC,
         'DESTINO (EMP)': r.destinoEmp,
         'TIPO DOCUMENTO': r.tipoDocumento,
-        'NÂ° FOLIO': r.nFolio,
+        'N° FOLIO': r.nFolio,
         'COMPRADOR': r.conductor,
         'PATENTE': r.patente,
-        'ESTACIÃN': r.estacion
+        'ESTACIÓN': r.estacion
       }));
 
       // Agregar fila de totales
@@ -638,7 +638,7 @@
         'TIPO DE COMBUSTIBLE': '',
         'MONTO NETO': totNeto,
         'IMPUESTO (IVA)': totIVA,
-        'IMP. ESPECÃFICO LEY 18.502': totImpRecup,
+        'IMP. ESPECÍFICO LEY 18.502': totImpRecup,
         'MONTO TOTAL': totMonto
       });
 
@@ -665,7 +665,7 @@
       XLSX.writeFile(wb, `Libro_Combustible_${month}.xlsx`);
     }
 
-    // ââââ Helpers ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    // ──── Helpers ────────────────────────────────────────────────────────────
     function formatNumber(n, decimals) {
       if (n === null || n === undefined || isNaN(n)) return '0';
       return Number(n).toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
@@ -699,12 +699,12 @@
       document.getElementById('tableFoot').style.display = 'none';
     }
 
-    // ââââ Event Listeners ââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    // ──── Event Listeners ────────────────────────────────────────────────────
     document.getElementById('monthSelect').addEventListener('change', (e) => loadMonth(e.target.value));
     document.getElementById('fuelFilter').addEventListener('change', renderAll);
     document.getElementById('searchInput').addEventListener('input', renderAll);
 
-    // ââââ Tasas impuesto especÃ­fico ââââââââââââââââââââââââââââââââââââââââââ
+    // ──── Tasas impuesto específico ──────────────────────────────────────────
     function getTasaEspecifica(tipoCombustible) {
       const fuel = (tipoCombustible || '').toUpperCase();
       if (fuel.includes('DIESEL')) return parseFloat(document.getElementById('taxDiesel')?.value) || 120;
@@ -719,7 +719,7 @@
       el.style.display = el.style.display === 'none' ? 'block' : 'none';
     }
 
-    // ââââ Start âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+    // ──── Start ─────────────────────────────────────────────────────────────
     init();
   </script>
 </body>
