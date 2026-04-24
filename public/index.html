@@ -453,7 +453,7 @@
           conductor: tx.conductor || d.conductor || tx.nombreConductor || '',
           patente: tx.patente || d.patente || '',
           estacion: d.nombreEstacion || d.estacion || '',
-          docUrl: d.urlDocumento || d.urlAcepta || '',
+          docUrl: tx.urlDocumento || d.urlDocumento || d.urlAcepta || '',
           odometro: tx.odometro || d.odometro || ''
         };
       });
@@ -1165,7 +1165,7 @@
           conductor: tx.conductor || d.conductor || tx.nombreConductor || '',
           patente: tx.patente || d.patente || '',
           estacion: d.nombreEstacion || d.estacion || '',
-          docUrl: d.urlDocumento || d.urlAcepta || '',
+          docUrl: tx.urlDocumento || d.urlDocumento || d.urlAcepta || '',
           odometro: tx.odometro || d.odometro || ''
         };
       });
