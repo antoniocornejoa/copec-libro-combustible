@@ -34,7 +34,7 @@
       "nombreEstacion": "AV CIRCUNVALACION NORTE 1265",
       "sucursal": "Estacion 60210",
       "direccion": "AV CIRCUNVALACION NORTE 1265",
-      "urlDocumento": "Documento no disponible.",
+      "urlDocumento": "http://copec2604.acepta.com/v01/73E9C561804D14FFECEAD8AEFAFBD321A9F721C8?k=b9c95c683ebb89da63af74e3d5955932",
       "urlAcepta": "",
       "odometro": 201721,
       "medioDePago": "SALDO PREPAGO",
@@ -2493,5 +2493,5 @@
     }
   ],
   "facturas": [],
-  "extractedAt": "2026-04-24T20:53:13.447Z"
+  "extractedAt": "2026-04-24T21:40:49.377Z"
 }
