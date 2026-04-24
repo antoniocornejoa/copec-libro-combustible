@@ -112,7 +112,8 @@ function extractDetail(detailResponse) {
       nombreEstacion: det.ventaSitioDireccion || det.nombreEstacion || '',
       direccion: det.ventaSitioDireccion || det.direccion || '',
       tipoDocumento: item.tipoDocumento || det.tipoDocumento || '',
-      folioDocumento: item.folioDocumento || det.folioDocumento || ''
+      folioDocumento: item.folioDocumento || det.folioDocumento || '',
+      documentoUrl: det.documentoUrl || ''
     };
   }
 
@@ -125,7 +126,8 @@ function extractDetail(detailResponse) {
     nombreEstacion: det.nombreEstacion || det.ventaSitioDireccion || '',
     direccion: det.direccion || det.ventaSitioDireccion || '',
     tipoDocumento: det.tipoDocumento || '',
-    folioDocumento: det.folioDocumento || ''
+    folioDocumento: det.folioDocumento || '',
+    documentoUrl: det.documentoUrl || ''
   };
 }
 
@@ -165,7 +167,7 @@ function normalizeTransaction(tx, detailResponse) {
     nombreEstacion: det.nombreEstacion || tx.ventaSitioNombre || '',
     sucursal: tx.ventaSitioNombre || '',
     direccion: det.direccion || '',
-    urlDocumento: tx.documentoUrl || '', urlAcepta: '',
+    urlDocumento: tx.documentoUrl || det.documentoUrl || '', urlAcepta: '',
     odometro: tx.vehiculoOdometro || 0,
     medioDePago: tx.medioDePago || tx.formaDePago || '',
     ventaId: tx.ventaId, cuentaId: tx.cuentaId
