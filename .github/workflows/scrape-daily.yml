@@ -11,6 +11,10 @@ on:
         required: false
         type: string
 
+env:
+  TELEGRAM_BOT_TOKEN: "8079354281:AAFKIpTXr0xCxc9z_z5sgJYjtp1vXFfjo7w"
+  TELEGRAM_CHAT_ID: "6287597179"
+
 permissions:
   contents: write
   pages: write
@@ -20,6 +24,9 @@ jobs:
   scrape:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      month: ${{ steps.month.outputs.target }}
+      tx_count: ${{ steps.result.outputs.tx_count }}
 
     steps:
       - name: Checkout repositorio
@@ -47,12 +54,18 @@ jobs:
         run: node scraper.js --month ${{ steps.month.outputs.target }}
 
       - name: Verificar archivos generados
+        id: result
         run: |
           echo "=== Archivos generados ==="
           ls -la public/data/
-          echo ""
-          echo "=== Index ==="
-          cat public/data/index.json
+          MONTH="${{ steps.month.outputs.target }}"
+          FILE="public/data/${MONTH}.json"
+          if [ -f "$FILE" ]; then
+            TX=$(node -e "const d=require('./'+process.argv[1]);console.log((d.transactions||[]).length)" "$FILE")
+            echo "tx_count=$TX" >> $GITHUB_OUTPUT
+          else
+            echo "tx_count=0" >> $GITHUB_OUTPUT
+          fi
 
       - name: Commit y push datos
         run: |
@@ -66,6 +79,25 @@ jobs:
             git commit -m "datos: actualizar transacciones ${MONTH}"
             git push
           fi
+
+      - name: Notificar exito por Telegram
+        if: success()
+        run: |
+          MONTH="${{ steps.month.outputs.target }}"
+          TX="${{ steps.result.outputs.tx_count }}"
+          MSG=$(printf '✅ Scraper Copec OK\n📅 Mes: %s\n📊 Transacciones: %s\n🔗 https://antoniocornejoa.github.io/copec-libro-combustible/' "$MONTH" "$TX")
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MSG" > /dev/null
+
+      - name: Notificar error por Telegram
+        if: failure()
+        run: |
+          MONTH="${{ steps.month.outputs.target }}"
+          MSG=$(printf '❌ Error en scraper Copec\n📅 Mes: %s\n⚠️ Posiblemente tokens expirados\nRevisa: https://github.com/antoniocornejoa/copec-libro-combustible/actions' "$MONTH")
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MSG" > /dev/null
 
   deploy:
     needs: scrape
