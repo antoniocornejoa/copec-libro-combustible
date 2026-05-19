@@ -335,6 +335,7 @@
   <script>
     // ──── State ─────────────────────────────────────────────────────────────
     let currentData = null;
+    let fleetMap = {};
     let allMonths = [];
     let filteredRows = [];
 
@@ -343,6 +344,7 @@
       try {
         // Cargar índice de meses disponibles
         const indexRes = await fetch('data/index.json');
+      try { const fr = await fetch('data/fleet.json'); fleetMap = await fr.json(); } catch(e) {}
         if (!indexRes.ok) {
           showEmpty('No hay datos disponibles. Ejecuta el scraper primero.');
           return;
@@ -446,8 +448,8 @@
           impEspecifico: impEspecifico,
           esRecuperable: esRecuperable,
           montoTotal: montoTotal,
-          destinoCC: d.estacion || tx.estacion || '',
-          destinoEmp: d.direccion || d.sucursal || '',
+          destinoCC: (fleetMap[(tx.patente || d.patente || '')] || {}).centroCosto || '',
+          destinoEmp: (fleetMap[(tx.patente || d.patente || '')] || {}).empresaUso || '',
           tipoDocumento: tx.tipoDocumento || d.tipoDocumento || 'Guia de despacho',
           nFolio: tx.nroDocumento || d.folioDocumento || d.nroDocumento || '',
           conductor: tx.conductor || d.conductor || tx.nombreConductor || '',
