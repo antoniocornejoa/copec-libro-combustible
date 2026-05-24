@@ -34,7 +34,7 @@
       line-height: 1.5;
     }
 
-    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    .container { max-width: 100%; margin: 0 auto; padding: 16px 24px; }
 
     /* Header */
     .header {
@@ -324,7 +324,7 @@
       </select>
 
       <label for="searchInput">Buscar:</label>
-      <input type="text" id="searchInput" placeholder="Conductor, patente...">
+      <input type="text" id="searchInput" placeholder="Conductor, patente, obra...">
 
       <button class="btn-tasas" onclick="window.open('https://www.sii.cl/valores_y_fechas/impuesto_especifico/tabla_impuestos.htm','_blank')">Tasas Imp.</button>
     </div>
@@ -344,8 +344,8 @@
             <th class="text-right">IVA</th>
             <th class="text-right">Imp. Específico</th>
             <th class="text-right">Monto Total</th>
-            <th>Destino (CC)</th>
-            <th>Destino (Emp)</th>
+            <th>Obra (CC)</th>
+            <th>Constructora</th>
             <th>Conductor</th>
             <th>Patente</th>
             <th>Estación</th>
@@ -381,15 +381,59 @@
   </div>
 
   <script>
+    // ─── Tasas Impuesto Específico ($/litro) - actualizables ────────────
+    // Fuente: SII - https://www.sii.cl/valores_y_fechas/impuesto_especifico/tabla_impuestos.htm
+    const TASAS_IMP_ESP = {
+      diesel: {
+        base: 1.5,      // UTM/m³ (componente fijo - Recuperable)
+        variable: 0,     // UTM/m³ (componente variable - puede ser negativo)
+        utmValue: 67294, // Valor UTM Mayo 2026 (actualizable)
+      },
+      gasolina: {
+        base: 6.0,       // UTM/m³ (componente fijo)
+        utmValue: 67294,
+      }
+    };
+
+    function calcImpEsp(litros, tipoCombustible) {
+      const tipo = (tipoCombustible || '').toUpperCase();
+      const isDiesel = tipo.includes('DIESEL') || tipo.includes('BLUEMAX');
+
+      if (isDiesel) {
+        const tasaBase = (TASAS_IMP_ESP.diesel.base * TASAS_IMP_ESP.diesel.utmValue) / 1000; // $/litro
+        const tasaVar = (TASAS_IMP_ESP.diesel.variable * TASAS_IMP_ESP.diesel.utmValue) / 1000;
+        const impRecuperable = Math.round(litros * tasaBase);  // Recuperable (crédito fiscal)
+        const impNoRecuperable = Math.round(litros * tasaVar);  // No recuperable
+        return { impRecuperable, impNoRecuperable, impEspecifico: impRecuperable + impNoRecuperable };
+      } else if (tipo.includes('GAS') || tipo.includes('BENCINA')) {
+        const tasa = (TASAS_IMP_ESP.gasolina.base * TASAS_IMP_ESP.gasolina.utmValue) / 1000;
+        const imp = Math.round(litros * tasa);
+        return { impRecuperable: 0, impNoRecuperable: imp, impEspecifico: imp };
+      }
+      return { impRecuperable: 0, impNoRecuperable: 0, impEspecifico: 0 };
+    }
+
     // ─── State ──────────────────────────────────────────────────────────
     let currentData = null;
     let allMonths = [];
     let filteredRows = [];
     let indexData = null;
+    let fleetData = null;
 
     // ─── Init ───────────────────────────────────────────────────────────
     async function init() {
       try {
+        // Load fleet data
+        try {
+          const fleetRes = await fetch('data/fleet.json');
+          if (fleetRes.ok) {
+            fleetData = await fleetRes.json();
+          }
+        } catch (e) {
+          console.warn('Fleet data not available:', e.message);
+          fleetData = null;
+        }
+
         const indexRes = await fetch('data/index.json');
         if (!indexRes.ok) {
           showEmpty('No hay datos disponibles. Ejecuta el scraper primero.');
@@ -458,39 +502,46 @@
       const search = document.getElementById('searchInput').value.toLowerCase();
 
       filteredRows = currentData.transactions.map(tx => {
-        const d = tx.detail || {};
+        // Fleet lookup
+        const patente = tx.patente || '';
+        const fleet = (fleetData && patente) ? fleetData[patente] || null : null;
+
         const row = {
-          fecha: tx.fecha || tx.fechaTransaccion || d.fecha || '',
-          factura: tx.nroDocumento || d.nroDocumento || d.folioDocumento || '',
-          litros: parseFloat(tx.litros || d.cantidad || d.litros || 0),
-          precioUnitario: parseFloat(d.valorPorLitro || d.precioUnitario || tx.precioUnitario || 0),
-          tipoCombustible: d.combustible || d.tipoCombustible || tx.tipoCombustible || '',
-          montoNeto: 0,
-          iva: 0,
-          impEspecifico: parseFloat(d.impuestoEspecifico || d.impEspecifico || tx.impuestoEspecifico || 0),
-          impRecuperable: parseFloat(d.impuestoRecuperable || d.impRecuperable || tx.impuestoRecuperable || 0),
-          impNoRecuperable: parseFloat(d.impuestoNoRecuperable || d.impNoRecuperable || tx.impuestoNoRecuperable || 0),
-          montoTotal: parseFloat(tx.monto || d.montoTotal || d.monto || 0),
-          destinoCC: d.centroCosto || d.estacion || tx.centroCosto || tx.estacion || '',
-          destinoEmp: d.empresaUso || d.direccion || d.sucursal || tx.empresaUso || '',
-          conductor: tx.conductor || d.conductor || tx.nombreConductor || '',
-          patente: tx.patente || d.patente || '',
-          estacion: d.estacion || d.nombreEstacion || '',
-          docUrl: d.urlDocumento || d.urlAcepta || '',
+          fecha: tx.fechaTransaccion || tx.fecha || '',
+          factura: tx.nroDocumento || tx.factura || '',
+          litros: parseFloat(tx.litros || tx.cantidad || 0),
+          precioUnitario: parseFloat(tx.precioUnitario || tx.precio || 0),
+          tipoCombustible: tx.tipoCombustible || tx.combustible || '',
+          montoNeto: parseFloat(tx.montoNeto || 0),
+          iva: parseFloat(tx.iva || 0),
+          montoTotal: parseFloat(tx.montoTotal || tx.monto || 0),
+          conductor: tx.conductor || tx.nombreConductor || '',
+          patente: patente,
+          estacion: tx.estacion || tx.nombreEstacion || '',
+          docUrl: tx.urlDocumento || tx.urlAcepta || '',
+          // Fleet lookup
+          obra: fleet ? fleet.centroCosto || '' : '',
+          constructora: fleet ? fleet.empresaUso || '' : '',
         };
 
-        if (row.litros && row.precioUnitario) {
-          row.montoNeto = row.litros * row.precioUnitario;
-        } else if (row.montoTotal) {
-          row.montoNeto = Math.round(row.montoTotal / 1.19);
-        }
-        if (row.montoNeto) {
-          row.iva = Math.round(row.montoNeto * 0.19);
-        }
+        // Calculate Impuesto Específico
+        const impCalc = calcImpEsp(row.litros, row.tipoCombustible);
+        row.impEspecifico = impCalc.impEspecifico;
+        row.impRecuperable = impCalc.impRecuperable;
+        row.impNoRecuperable = impCalc.impNoRecuperable;
 
-        // If no specific tax data, try to derive it
-        if (!row.impEspecifico && row.impRecuperable) {
-          row.impEspecifico = row.impRecuperable + row.impNoRecuperable;
+        // Recalculate montoNeto properly when impEspecifico > 0
+        // montoTotal = montoNeto_real + IVA_real + impEsp
+        // So: montoNeto_real = (montoTotal - impEspecifico) / 1.19
+        // IVA_real = montoNeto_real * 0.19
+        if (row.impEspecifico > 0 && row.montoTotal > 0) {
+          row.montoNeto = Math.round((row.montoTotal - row.impEspecifico) / 1.19);
+          row.iva = Math.round(row.montoNeto * 0.19);
+        } else if (row.montoNeto === 0 && row.montoTotal > 0) {
+          row.montoNeto = Math.round(row.montoTotal / 1.19);
+          row.iva = Math.round(row.montoNeto * 0.19);
+        } else if (row.iva === 0 && row.montoNeto > 0) {
+          row.iva = Math.round(row.montoNeto * 0.19);
         }
 
         return row;
@@ -507,8 +558,8 @@
           r.patente.toLowerCase().includes(search) ||
           r.factura.toString().includes(search) ||
           r.estacion.toLowerCase().includes(search) ||
-          r.destinoCC.toLowerCase().includes(search) ||
-          r.destinoEmp.toLowerCase().includes(search)
+          r.obra.toLowerCase().includes(search) ||
+          r.constructora.toLowerCase().includes(search)
         );
       }
 
@@ -595,8 +646,8 @@
           <td class="text-right">${formatNumber(r.iva, 0)}</td>
           <td class="text-right">${impCell}</td>
           <td class="text-right"><strong>${formatNumber(r.montoTotal, 0)}</strong></td>
-          <td title="${r.destinoCC}">${truncate(r.destinoCC, 40)}</td>
-          <td title="${r.destinoEmp}">${truncate(r.destinoEmp, 25)}</td>
+          <td title="${r.obra}">${truncate(r.obra, 40)}</td>
+          <td title="${r.constructora}">${truncate(r.constructora, 25)}</td>
           <td>${r.conductor}</td>
           <td>${r.patente}</td>
           <td>${r.estacion}</td>
@@ -677,8 +728,8 @@
         'IMP. RECUPERABLE': r.impRecuperable,
         'IMP. NO RECUPERABLE': r.impNoRecuperable,
         'MONTO TOTAL': r.montoTotal,
-        'DESTINO (CC)': r.destinoCC,
-        'DESTINO (EMP)': r.destinoEmp,
+        'OBRA (CC)': r.obra,
+        'CONSTRUCTORA': r.constructora,
         'CONDUCTOR': r.conductor,
         'PATENTE': r.patente,
         'ESTACION': r.estacion
@@ -726,8 +777,11 @@
 
     function formatFecha(fecha) {
       if (!fecha) return '';
-      if (typeof fecha === 'string' && fecha.includes('T')) {
-        return new Date(fecha).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      if (typeof fecha === 'string' && (fecha.includes('T') || fecha.includes(' '))) {
+        const d = new Date(fecha);
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
       }
       return fecha;
     }
