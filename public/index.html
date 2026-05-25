@@ -397,7 +397,7 @@
 
     function calcImpEsp(litros, tipoCombustible) {
       const tipo = (tipoCombustible || '').toUpperCase();
-      const isDiesel = tipo.includes('DIESEL') || tipo.includes('BLUEMAX');
+      const isDiesel = tipo.includes('DIESEL') && !tipo.includes('BLUEMAX');
 
       if (isDiesel) {
         const tasaBase = (TASAS_IMP_ESP.diesel.base * TASAS_IMP_ESP.diesel.utmValue) / 1000; // $/litro
