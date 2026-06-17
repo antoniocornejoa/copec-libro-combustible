@@ -323,6 +323,11 @@
         <option value="BLUEMAX">Bluemax</option>
       </select>
 
+      <label for="constructoraFilter">Constructora:</label>
+      <select id="constructoraFilter">
+        <option value="">Todas</option>
+      </select>
+
       <label for="searchInput">Buscar:</label>
       <input type="text" id="searchInput" placeholder="Conductor, patente, obra...">
 
@@ -434,6 +439,18 @@
           fleetData = null;
         }
 
+        // Populate constructora filter from fleet data
+        if (fleetData) {
+          const constructoras = [...new Set(Object.values(fleetData).map(f => f.empresaUso).filter(Boolean))].sort();
+          const cSelect = document.getElementById('constructoraFilter');
+          constructoras.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c;
+            opt.textContent = c;
+            cSelect.appendChild(opt);
+          });
+        }
+
         const indexRes = await fetch('data/index.json');
         if (!indexRes.ok) {
           showEmpty('No hay datos disponibles. Ejecuta el scraper primero.');
@@ -499,6 +516,7 @@
       }
 
       const fuelFilter = document.getElementById('fuelFilter').value;
+      const constructoraFilter = document.getElementById('constructoraFilter').value;
       const search = document.getElementById('searchInput').value.toLowerCase();
 
       filteredRows = currentData.transactions.map(tx => {
@@ -551,6 +569,9 @@
         filteredRows = filteredRows.filter(r =>
           r.tipoCombustible.toUpperCase().includes(fuelFilter.toUpperCase())
         );
+      }
+      if (constructoraFilter) {
+        filteredRows = filteredRows.filter(r => r.constructora === constructoraFilter);
       }
       if (search) {
         filteredRows = filteredRows.filter(r =>
@@ -811,6 +832,7 @@
     // ─── Event Listeners ────────────────────────────────────────────────
     document.getElementById('monthSelect').addEventListener('change', (e) => loadMonth(e.target.value));
     document.getElementById('fuelFilter').addEventListener('change', renderAll);
+    document.getElementById('constructoraFilter').addEventListener('change', renderAll);
     document.getElementById('searchInput').addEventListener('input', renderAll);
 
     // ─── Start ──────────────────────────────────────────────────────────
