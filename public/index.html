@@ -349,6 +349,7 @@
             <th class="text-right">IVA</th>
             <th class="text-right">Imp. Específico</th>
             <th class="text-right">Monto Total</th>
+            <th class="text-right">Monto Recuperado</th>
             <th>Obra (CC)</th>
             <th>Constructora</th>
             <th>Conductor</th>
@@ -358,7 +359,7 @@
           </tr>
         </thead>
         <tbody id="tableBody">
-          <tr><td colspan="15" class="loading">
+          <tr><td colspan="16" class="loading">
             <div class="spinner"></div>
             Cargando datos...
           </td></tr>
@@ -373,6 +374,7 @@
             <td id="totalIVA" class="text-right"></td>
             <td id="totalImpEsp" class="text-right"></td>
             <td id="totalMonto" class="text-right"></td>
+            <td id="totalRecuperado" class="text-right"></td>
             <td colspan="6"></td>
           </tr>
         </tfoot>
@@ -637,7 +639,7 @@
       const tfoot = document.getElementById('tableFoot');
 
       if (filteredRows.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="15" class="empty-state">Sin transacciones para este período</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="16" class="empty-state">Sin transacciones para este período</td></tr>';
         tfoot.style.display = 'none';
         return;
       }
@@ -667,6 +669,7 @@
           <td class="text-right">${formatNumber(r.iva, 0)}</td>
           <td class="text-right">${impCell}</td>
           <td class="text-right"><strong>${formatNumber(r.montoTotal, 0)}</strong></td>
+          <td class="text-right">${r.impRecuperable ? `<span style="color:var(--success);font-weight:600">$${formatNumber(r.impRecuperable, 0)}</span>` : '-'}</td>
           <td title="${r.obra}">${truncate(r.obra, 40)}</td>
           <td title="${r.constructora}">${truncate(r.constructora, 25)}</td>
           <td>${r.conductor}</td>
@@ -687,6 +690,8 @@
       document.getElementById('totalIVA').textContent = '$' + formatNumber(totIVA, 0);
       document.getElementById('totalImpEsp').textContent = '$' + formatNumber(totImpEsp, 0);
       document.getElementById('totalMonto').textContent = '$' + formatNumber(totMonto, 0);
+      const totRecup = filteredRows.reduce((s, r) => s + r.impRecuperable, 0);
+      document.getElementById('totalRecuperado').textContent = '$' + formatNumber(totRecup, 0);
       tfoot.style.display = '';
     }
 
@@ -825,7 +830,7 @@
 
     function showEmpty(msg) {
       document.getElementById('tableBody').innerHTML =
-        `<tr><td colspan="15" class="empty-state">${msg}</td></tr>`;
+        `<tr><td colspan="16" class="empty-state">${msg}</td></tr>`;
       document.getElementById('tableFoot').style.display = 'none';
     }
 
