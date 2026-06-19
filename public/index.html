@@ -388,36 +388,43 @@
   </div>
 
   <script>
-    // ─── Tasas Impuesto Específico ($/litro) - actualizables ────────────
-    // Fuente: SII - https://www.sii.cl/valores_y_fechas/impuesto_especifico/tabla_impuestos.htm
-    const TASAS_IMP_ESP = {
-      diesel: {
-        base: 1.5,      // UTM/m³ (componente fijo - Recuperable)
-        variable: 0,     // UTM/m³ (componente variable - puede ser negativo)
-        utmValue: 67294, // Valor UTM Mayo 2026 (actualizable)
-      },
-      gasolina: {
-        base: 6.0,       // UTM/m³ (componente fijo)
-        utmValue: 67294,
-      }
+    // ─── Tasas Impuesto Específico por Mes ─────────────────────────────
+    // Fuente: SII UTM + Facturas reales Copec
+    // Para meses con factura: tasa neta real (IEF - IEV) en $/litro
+    // Para meses sin factura: estimación UTM × tasa base Ley 18.502
+    const UTM_POR_MES = {
+      '2026-01': 69751, '2026-02': 69611, '2026-03': 69889,
+      '2026-04': 69889, '2026-05': 70588, '2026-06': 71506,
+      '2026-07': 71649,
     };
 
-    function calcImpEsp(litros, tipoCombustible) {
+    // Tasas netas reales de facturas Copec ($/litro)
+    // diesel = imp. específico recuperable neto (IEF - IEV) por litro
+    // gasolina = imp. específico total neto (IEF - IEV) por litro
+    const TASAS_FACTURA = {
+      '2026-04': { diesel: 80.55, gasolina: 476.75 },
+      // Agregar más meses a medida que lleguen facturas:
+      // '2026-05': { diesel: XX.XX, gasolina: XXX.XX },
+    };
+
+    function calcImpEsp(litros, tipoCombustible, mes) {
       const tipo = (tipoCombustible || '').toUpperCase();
       const isDiesel = tipo.includes('DIESEL') && !tipo.includes('BLUEMAX');
+      const factura = TASAS_FACTURA[mes];
+
+      // Solo calcular con tasas reales de factura
+      if (!factura) {
+        return { impRecuperable: 0, impNoRecuperable: 0, impEspecifico: 0, sinFactura: true };
+      }
 
       if (isDiesel) {
-        const tasaBase = (TASAS_IMP_ESP.diesel.base * TASAS_IMP_ESP.diesel.utmValue) / 1000; // $/litro
-        const tasaVar = (TASAS_IMP_ESP.diesel.variable * TASAS_IMP_ESP.diesel.utmValue) / 1000;
-        const impRecuperable = Math.round(litros * tasaBase);  // Recuperable (crédito fiscal)
-        const impNoRecuperable = Math.round(litros * tasaVar);  // No recuperable
-        return { impRecuperable, impNoRecuperable, impEspecifico: impRecuperable + impNoRecuperable };
+        const impRecuperable = Math.round(litros * factura.diesel);
+        return { impRecuperable, impNoRecuperable: 0, impEspecifico: impRecuperable, sinFactura: false };
       } else if (tipo.includes('GAS') || tipo.includes('BENCINA')) {
-        const tasa = (TASAS_IMP_ESP.gasolina.base * TASAS_IMP_ESP.gasolina.utmValue) / 1000;
-        const imp = Math.round(litros * tasa);
-        return { impRecuperable: 0, impNoRecuperable: imp, impEspecifico: imp };
+        const imp = Math.round(litros * factura.gasolina);
+        return { impRecuperable: 0, impNoRecuperable: imp, impEspecifico: imp, sinFactura: false };
       }
-      return { impRecuperable: 0, impNoRecuperable: 0, impEspecifico: 0 };
+      return { impRecuperable: 0, impNoRecuperable: 0, impEspecifico: 0, sinFactura: false };
     }
 
     // ─── State ──────────────────────────────────────────────────────────
@@ -544,11 +551,13 @@
           constructora: fleet ? fleet.empresaUso || '' : '',
         };
 
-        // Calculate Impuesto Específico
-        const impCalc = calcImpEsp(row.litros, row.tipoCombustible);
+        // Calculate Impuesto Específico (con tasas del mes actual)
+        const mesActual = currentData.month || currentData.range?.label || '';
+        const impCalc = calcImpEsp(row.litros, row.tipoCombustible, mesActual);
         row.impEspecifico = impCalc.impEspecifico;
         row.impRecuperable = impCalc.impRecuperable;
         row.impNoRecuperable = impCalc.impNoRecuperable;
+        row.sinFactura = impCalc.sinFactura || false;
 
         // Recalculate montoNeto properly when impEspecifico > 0
         // montoTotal = montoNeto_real + IVA_real + impEsp
@@ -623,8 +632,12 @@
         </div>
         <div class="stat-card imp-recup">
           <div class="label">Imp. Recuperable</div>
-          <div class="value">$${formatNumber(totalImpRecup, 0)}</div>
-          <div class="sub">Diesel - Crédito fiscal</div>
+          ${TASAS_FACTURA[currentData.month]
+            ? `<div class="value">$${formatNumber(totalImpRecup, 0)}</div>
+               <div class="sub">Diesel - Crédito fiscal</div>`
+            : `<div class="value" style="font-size:1rem;color:var(--warning)">Pendiente factura</div>
+               <div class="sub">Ingrese tasa real en config</div>`
+          }
         </div>
         <div class="stat-card highlight">
           <div class="label">Total</div>
@@ -647,7 +660,9 @@
       tbody.innerHTML = filteredRows.map(r => {
         // Format imp. especifico with R/NR indicator
         let impCell = '';
-        if (r.impRecuperable || r.impNoRecuperable) {
+        if (r.sinFactura) {
+          impCell = '<span style="color:var(--warning);font-size:0.75rem">s/f</span>';
+        } else if (r.impRecuperable || r.impNoRecuperable) {
           const parts = [];
           if (r.impRecuperable) parts.push(`${formatNumber(r.impRecuperable, 0)} <span class="imp-r">(R)</span>`);
           if (r.impNoRecuperable) parts.push(`${formatNumber(r.impNoRecuperable, 0)} <span class="imp-nr">(NR)</span>`);
@@ -669,7 +684,7 @@
           <td class="text-right">${formatNumber(r.iva, 0)}</td>
           <td class="text-right">${impCell}</td>
           <td class="text-right"><strong>${formatNumber(r.montoTotal, 0)}</strong></td>
-          <td class="text-right">${r.impRecuperable ? `<span style="color:var(--success);font-weight:600">$${formatNumber(r.impRecuperable, 0)}</span>` : '-'}</td>
+          <td class="text-right">${r.sinFactura ? '<span style="color:var(--warning);font-size:0.75rem">s/f</span>' : (r.impRecuperable ? `<span style="color:var(--success);font-weight:600">$${formatNumber(r.impRecuperable, 0)}</span>` : '-')}</td>
           <td title="${r.obra}">${truncate(r.obra, 40)}</td>
           <td title="${r.constructora}">${truncate(r.constructora, 25)}</td>
           <td>${r.conductor}</td>
@@ -691,7 +706,9 @@
       document.getElementById('totalImpEsp').textContent = '$' + formatNumber(totImpEsp, 0);
       document.getElementById('totalMonto').textContent = '$' + formatNumber(totMonto, 0);
       const totRecup = filteredRows.reduce((s, r) => s + r.impRecuperable, 0);
-      document.getElementById('totalRecuperado').textContent = '$' + formatNumber(totRecup, 0);
+      const haySinFactura = filteredRows.some(r => r.sinFactura);
+      document.getElementById('totalRecuperado').textContent = haySinFactura ? 'Pendiente' : '$' + formatNumber(totRecup, 0);
+      document.getElementById('totalRecuperado').style.color = haySinFactura ? 'var(--warning)' : '';
       tfoot.style.display = '';
     }
 
