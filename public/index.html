@@ -559,13 +559,14 @@
         row.impNoRecuperable = impCalc.impNoRecuperable;
         row.sinFactura = impCalc.sinFactura || false;
 
-        // Recalculate montoNeto properly when impEspecifico > 0
-        // montoTotal = montoNeto_real + IVA_real + impEsp
-        // So: montoNeto_real = (montoTotal - impEspecifico) / 1.19
-        // IVA_real = montoNeto_real * 0.19
+        // El impuesto especifico forma parte de la base afecta a IVA (Chile):
+        //   base imponible = montoTotal / 1.19   (= neto + imp. especifico)
+        //   IVA  = montoTotal - base imponible
+        //   neto = base imponible - imp. especifico
         if (row.impEspecifico > 0 && row.montoTotal > 0) {
-          row.montoNeto = Math.round((row.montoTotal - row.impEspecifico) / 1.19);
-          row.iva = Math.round(row.montoNeto * 0.19);
+          const baseImponible = Math.round(row.montoTotal / 1.19);
+          row.iva = row.montoTotal - baseImponible;
+          row.montoNeto = baseImponible - row.impEspecifico;
         } else if (row.montoNeto === 0 && row.montoTotal > 0) {
           row.montoNeto = Math.round(row.montoTotal / 1.19);
           row.iva = Math.round(row.montoNeto * 0.19);

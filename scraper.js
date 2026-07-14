@@ -207,18 +207,28 @@ async function main() {
     for (const month of targetMonths) {
       console.log(`\nExtrayendo mes: ${month}`);
       const range = getMonthRange(month);
-      const txResponse = await apiCall('cuenta/consultartransacciones', {
-        cuentaId: cuentaId,
-        fechaConsultaInicio: range.start,
-        fechaConsulta: range.end,
-        posicionInicial: 0
-      }, tokens);
+      // Paginacion: la API devuelve como maximo 100 transacciones por pagina.
+      // Iteramos incrementando posicionInicial hasta recibir una pagina incompleta.
       let transactions = [];
-      if (txResponse.data && txResponse.data.transacciones) transactions = txResponse.data.transacciones;
-      else if (Array.isArray(txResponse)) transactions = txResponse;
-      else if (txResponse.data && Array.isArray(txResponse.data)) transactions = txResponse.data;
-      else if (txResponse.transacciones) transactions = txResponse.transacciones;
-      else if (txResponse.resultado) transactions = txResponse.resultado;
+      let posicionInicial = 0;
+      while (true) {
+        const txResponse = await apiCall('cuenta/consultartransacciones', {
+          cuentaId: cuentaId,
+          fechaConsultaInicio: range.start,
+          fechaConsulta: range.end,
+          posicionInicial: posicionInicial
+        }, tokens);
+        let page = [];
+        if (txResponse.data && txResponse.data.transacciones) page = txResponse.data.transacciones;
+        else if (Array.isArray(txResponse)) page = txResponse;
+        else if (txResponse.data && Array.isArray(txResponse.data)) page = txResponse.data;
+        else if (txResponse.transacciones) page = txResponse.transacciones;
+        else if (txResponse.resultado) page = txResponse.resultado;
+        transactions = transactions.concat(page);
+        if (page.length < 100) break; // ultima pagina
+        posicionInicial += 100;
+        await sleep(300);
+      }
       console.log(`  ${transactions.length} transacciones encontradas`);
       const normalizedTransactions = [];
       for (let i = 0; i < transactions.length; i++) {
@@ -230,26 +240,6 @@ async function main() {
             cuentaId: cuentaId,
             idTransaccionCliente: txId
           }, tokens);
-          if (i === 0) {
-            console.log('  DEBUG detail keys:', JSON.stringify(Object.keys(detail)));
-            if (detail.data) {
-              console.log('  DEBUG detail.data keys:', JSON.stringify(Object.keys(detail.data)));
-              if (detail.data.transaccion) {
-                const t = detail.data.transaccion;
-                console.log('  DEBUG transaccion type:', typeof t, Array.isArray(t) ? 'array' : '');
-                if (typeof t === 'object' && !Array.isArray(t)) {
-                  console.log('  DEBUG transaccion keys:', JSON.stringify(Object.keys(t)));
-                  console.log('  DEBUG transaccion.combustible:', t.combustible);
-                  console.log('  DEBUG transaccion.productoNombre:', t.productoNombre);
-                  console.log('  DEBUG transaccion.tipoCombustible:', t.tipoCombustible);
-                  console.log('  DEBUG transaccion.cantidad:', t.cantidad);
-                  console.log('  DEBUG transaccion.valorPorLitro:', t.valorPorLitro);
-                }
-              }
-            }
-            const extracted = extractDetail(detail);
-            console.log('  DEBUG extracted:', JSON.stringify(extracted));
-          }
           normalizedTransactions.push(normalizeTransaction(tx, detail));
         } catch (e) {
           console.log(`  Error en detalle: ${e.message}`);
