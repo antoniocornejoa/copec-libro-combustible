@@ -559,14 +559,14 @@
         row.impNoRecuperable = impCalc.impNoRecuperable;
         row.sinFactura = impCalc.sinFactura || false;
 
-        // El impuesto especifico forma parte de la base afecta a IVA (Chile):
-        //   base imponible = montoTotal / 1.19   (= neto + imp. especifico)
-        //   IVA  = montoTotal - base imponible
-        //   neto = base imponible - imp. especifico
+        // El impuesto especifico va FUERA de la base afecta a IVA.
+        // Verificado contra factura Copec 32118808 (30-06-2026):
+        //   BASE AFECTA 12.462.430 + IVA 2.367.863 + IEV 673.721 + IEF 1.777.655 = TOTAL 17.281.669
+        //   IVA = 19% de la BASE AFECTA solamente (no incluye el imp. especifico).
+        // Por lo tanto: montoTotal = montoNeto * 1.19 + impEspecifico
         if (row.impEspecifico > 0 && row.montoTotal > 0) {
-          const baseImponible = Math.round(row.montoTotal / 1.19);
-          row.iva = row.montoTotal - baseImponible;
-          row.montoNeto = baseImponible - row.impEspecifico;
+          row.montoNeto = Math.round((row.montoTotal - row.impEspecifico) / 1.19);
+          row.iva = Math.round(row.montoNeto * 0.19);
         } else if (row.montoNeto === 0 && row.montoTotal > 0) {
           row.montoNeto = Math.round(row.montoTotal / 1.19);
           row.iva = Math.round(row.montoNeto * 0.19);
