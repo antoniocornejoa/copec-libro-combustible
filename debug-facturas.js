@@ -86,11 +86,35 @@ async function main() {
 
     // Bajar el PDF y extraer SOLO los totales tributarios del RESUMEN.
     // No se imprime URL, RUT, direccion ni folios: el repo es publico.
-    const pdfRes = await fetch(url);
-    console.log('  PDF HTTP:', pdfRes.status, '| bytes:', pdfRes.headers.get('content-length') || '?');
-    if (!pdfRes.ok) continue;
+    // Que forma tiene la URL (sin revelarla): host y si trae token
+    try {
+      const u = new URL(url);
+      console.log('  facturaUrl -> host:', u.host, '| path segs:', u.pathname.split('/').length,
+                  '| query params:', [...u.searchParams.keys()].join(',') || '(ninguno)');
+    } catch (_) { console.log('  facturaUrl no parseable'); }
 
-    const buf = Buffer.from(await pdfRes.arrayBuffer());
+    let pdfRes = await fetch(url);
+    console.log('  HTTP:', pdfRes.status, '| type:', pdfRes.headers.get('content-type'),
+                '| len:', pdfRes.headers.get('content-length') || '?');
+
+    let buf = Buffer.from(await pdfRes.arrayBuffer());
+
+    // Si no es PDF, mostrar que llego (probable error/redirect, no dato sensible)
+    if (buf.slice(0, 4).toString() !== '%PDF') {
+      console.log('  NO es PDF. Primeros 300 chars:');
+      console.log('   ', buf.toString('utf8').slice(0, 300).replace(/\s+/g, ' '));
+
+      // Reintento con los headers de autenticacion de Copec
+      const firma2 = computeFirma('', tokens.equipoSecret);
+      pdfRes = await fetch(url, {
+        headers: { access_token: tokens.access_token, firma: firma2, Accept: 'application/pdf,*/*' },
+      });
+      buf = Buffer.from(await pdfRes.arrayBuffer());
+      console.log('  Reintento con auth -> HTTP:', pdfRes.status,
+                  '| type:', pdfRes.headers.get('content-type'), '| bytes:', buf.length,
+                  '| es PDF:', buf.slice(0, 4).toString() === '%PDF');
+      if (buf.slice(0, 4).toString() !== '%PDF') continue;
+    }
     const zlib = require('zlib');
     let raw = '';
     let i = 0;
