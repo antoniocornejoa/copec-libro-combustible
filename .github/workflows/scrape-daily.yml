@@ -20,6 +20,12 @@ permissions:
   pages: write
   id-token: write
 
+# Serializa las corridas. Si se disparan varios meses a la vez, se encolan en
+# vez de correr en paralelo y pisarse el git push entre ellas.
+concurrency:
+  group: scrape-copec
+  cancel-in-progress: false
+
 jobs:
   scrape:
     runs-on: ubuntu-latest
@@ -53,6 +59,12 @@ jobs:
           COPEC_CUENTA_ID: ${{ secrets.COPEC_CUENTA_ID }}
         run: node scraper.js --month ${{ steps.month.outputs.target }}
 
+      # Tasas oficiales del impuesto especifico (SII / MEPCO + UTM).
+      # Si el SII falla, se conserva el tasas-sii.json anterior y el scrape sigue.
+      - name: Descargar tasas SII
+        continue-on-error: true
+        run: node sii-tasas.js
+
       - name: Verificar archivos generados
         id: result
         run: |
@@ -77,6 +89,8 @@ jobs:
           else
             MONTH="${{ steps.month.outputs.target }}"
             git commit -m "datos: actualizar transacciones ${MONTH}"
+            # Rebase por si el remoto avanzo mientras corria el scraper
+            git pull --rebase --autostash origin main
             git push
           fi
 

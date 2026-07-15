@@ -331,7 +331,7 @@
       <label for="searchInput">Buscar:</label>
       <input type="text" id="searchInput" placeholder="Conductor, patente, obra...">
 
-      <button class="btn-tasas" onclick="window.open('https://www.sii.cl/valores_y_fechas/impuesto_especifico/tabla_impuestos.htm','_blank')">Tasas Imp.</button>
+      <button class="btn-tasas" onclick="verTasasSii()">Tasas Imp.</button>
     </div>
 
     <div class="stats" id="statsContainer"></div>
@@ -388,43 +388,57 @@
   </div>
 
   <script>
-    // ─── Tasas Impuesto Específico por Mes ─────────────────────────────
-    // Fuente: SII UTM + Facturas reales Copec
-    // Para meses con factura: tasa neta real (IEF - IEV) en $/litro
-    // Para meses sin factura: estimación UTM × tasa base Ley 18.502
-    const UTM_POR_MES = {
-      '2026-01': 69751, '2026-02': 69611, '2026-03': 69889,
-      '2026-04': 69889, '2026-05': 70588, '2026-06': 71506,
-      '2026-07': 71649,
-    };
+    // ─── Impuesto Específico: tasas oficiales del SII ───────────────────
+    // Fuente única: SII (MEPCO Ley 20.493 + base Ley 18.502 + UTM).
+    // Las descarga sii-tasas.js en cada corrida -> data/tasas-sii.json
+    //
+    //   impuesto = litros × resultante(semana de la compra) × UTM(mes) / 1000
+    //   resultante = componente base + componente variable (con signo)
+    //
+    // La tasa aplicable es la VIGENTE A LA FECHA DE LA COMPRA (cambia cada
+    // jueves), por eso se resuelve por transacción y no por mes.
+    // Validado al peso contra factura Copec 32118808 del 30-06-2026:
+    //   IEF diésel 107,259 $/L = 1,50 UTM/m³ × 71.506 / 1000  ✓
+    //   IEV gasolina 64,398 $/L = (6,9006−6,00) × 71.506 / 1000  ✓
+    // Un resultante negativo es crédito MEPCO y se conserva con su signo.
+    let tasasSii = null;
 
-    // Tasas netas reales de facturas Copec ($/litro)
-    // diesel = imp. específico recuperable neto (IEF - IEV) por litro
-    // gasolina = imp. específico total neto (IEF - IEV) por litro
-    const TASAS_FACTURA = {
-      '2026-04': { diesel: 80.55, gasolina: 476.75 },
-      // Agregar más meses a medida que lleguen facturas:
-      // '2026-05': { diesel: XX.XX, gasolina: XXX.XX },
-    };
+    function fechaISO(tx) {
+      const f = String(tx.fechaTransaccion || tx.fecha || '').trim();
+      let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(f);
+      if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+      m = /^(\d{2})-(\d{2})-(\d{4})/.exec(f);
+      if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+      return null;
+    }
 
-    function calcImpEsp(litros, tipoCombustible, mes) {
-      const tipo = (tipoCombustible || '').toUpperCase();
-      const isDiesel = tipo.includes('DIESEL') && !tipo.includes('BLUEMAX');
-      const factura = TASAS_FACTURA[mes];
+    function fuelKey(tipoCombustible) {
+      const t = (tipoCombustible || '').trim().toUpperCase();
+      if (!t) return null;
+      if (t.includes('DIESEL')) return 'diesel';
+      if (t.includes('97')) return 'gas97';
+      if (t.includes('93') || t.includes('95') || t.includes('GAS') || t.includes('BENCINA')) return 'gas93';
+      return null;
+    }
 
-      // Solo calcular con tasas reales de factura
-      if (!factura) {
-        return { impRecuperable: 0, impNoRecuperable: 0, impEspecifico: 0, sinFactura: true };
-      }
+    function calcImpEsp(litros, tipoCombustible, iso) {
+      const t = (tipoCombustible || '').trim().toUpperCase();
+      const cero = { impRecuperable: 0, impNoRecuperable: 0, impEspecifico: 0, sinTasa: false };
 
-      if (isDiesel) {
-        const impRecuperable = Math.round(litros * factura.diesel);
-        return { impRecuperable, impNoRecuperable: 0, impEspecifico: impRecuperable, sinFactura: false };
-      } else if (tipo.includes('GAS') || tipo.includes('BENCINA')) {
-        const imp = Math.round(litros * factura.gasolina);
-        return { impRecuperable: 0, impNoRecuperable: imp, impEspecifico: imp, sinFactura: false };
-      }
-      return { impRecuperable: 0, impNoRecuperable: 0, impEspecifico: 0, sinFactura: false };
+      // Bluemax es AdBlue (aditivo), no combustible: no afecto a Ley 18.502
+      if (t.includes('BLUEMAX')) return cero;
+
+      const k = fuelKey(t);
+      if (!tasasSii || !k || !iso) return { ...cero, sinTasa: true };
+
+      const semana = tasasSii.semanas.find(s => s.desde <= iso); // ordenadas desc
+      const utm = tasasSii.utm[iso.slice(0, 7)];
+      if (!semana || !utm || semana[k] === undefined) return { ...cero, sinTasa: true };
+
+      const imp = Math.round(litros * semana[k] * utm / 1000);
+      return k === 'diesel'
+        ? { impRecuperable: imp, impNoRecuperable: 0, impEspecifico: imp, sinTasa: false }
+        : { impRecuperable: 0, impNoRecuperable: imp, impEspecifico: imp, sinTasa: false };
     }
 
     // ─── State ──────────────────────────────────────────────────────────
@@ -446,6 +460,15 @@
         } catch (e) {
           console.warn('Fleet data not available:', e.message);
           fleetData = null;
+        }
+
+        // Tasas oficiales del SII (impuesto especifico por semana + UTM)
+        try {
+          const tasasRes = await fetch('data/tasas-sii.json');
+          if (tasasRes.ok) tasasSii = await tasasRes.json();
+        } catch (e) {
+          console.warn('Tasas SII no disponibles:', e.message);
+          tasasSii = null;
         }
 
         // Populate constructora filter from fleet data
@@ -551,20 +574,21 @@
           constructora: fleet ? fleet.empresaUso || '' : '',
         };
 
-        // Calculate Impuesto Específico (con tasas del mes actual)
-        const mesActual = currentData.month || currentData.range?.label || '';
-        const impCalc = calcImpEsp(row.litros, row.tipoCombustible, mesActual);
+        // Impuesto especifico con la tasa SII vigente a la fecha de la compra
+        const impCalc = calcImpEsp(row.litros, row.tipoCombustible, fechaISO(tx));
         row.impEspecifico = impCalc.impEspecifico;
         row.impRecuperable = impCalc.impRecuperable;
         row.impNoRecuperable = impCalc.impNoRecuperable;
-        row.sinFactura = impCalc.sinFactura || false;
+        row.sinFactura = impCalc.sinTasa;
 
         // El impuesto especifico va FUERA de la base afecta a IVA.
         // Verificado contra factura Copec 32118808 (30-06-2026):
         //   BASE AFECTA 12.462.430 + IVA 2.367.863 + IEV 673.721 + IEF 1.777.655 = TOTAL 17.281.669
         //   IVA = 19% de la BASE AFECTA solamente (no incluye el imp. especifico).
         // Por lo tanto: montoTotal = montoNeto * 1.19 + impEspecifico
-        if (row.impEspecifico > 0 && row.montoTotal > 0) {
+        // Ojo: impEspecifico puede ser NEGATIVO (credito MEPCO), por eso !== 0
+        // y no > 0; si no, esas filas no se recalculan y la cuadratura se rompe.
+        if (row.impEspecifico !== 0 && row.montoTotal > 0) {
           row.montoNeto = Math.round((row.montoTotal - row.impEspecifico) / 1.19);
           row.iva = Math.round(row.montoNeto * 0.19);
         } else if (row.montoNeto === 0 && row.montoTotal > 0) {
@@ -633,11 +657,11 @@
         </div>
         <div class="stat-card imp-recup">
           <div class="label">Imp. Recuperable</div>
-          ${TASAS_FACTURA[currentData.month]
+          ${tasasSii
             ? `<div class="value">$${formatNumber(totalImpRecup, 0)}</div>
-               <div class="sub">Diesel - Crédito fiscal</div>`
-            : `<div class="value" style="font-size:1rem;color:var(--warning)">Pendiente factura</div>
-               <div class="sub">Ingrese tasa real en config</div>`
+               <div class="sub">Diesel - Crédito fiscal (tasas SII)</div>`
+            : `<div class="value" style="font-size:1rem;color:var(--warning)">Sin tasas SII</div>
+               <div class="sub">Falta data/tasas-sii.json</div>`
           }
         </div>
         <div class="stat-card highlight">
@@ -844,6 +868,14 @@
     function truncate(str, maxLen) {
       if (!str) return '';
       return str.length > maxLen ? str.substring(0, maxLen) + '...' : str;
+    }
+
+    // Tabla oficial del SII con los componentes base y variable (MEPCO)
+    function verTasasSii() {
+      const y = (tasasSii && tasasSii.semanas && tasasSii.semanas[0])
+        ? tasasSii.semanas[0].desde.slice(0, 4)
+        : new Date().getFullYear();
+      window.open(`https://www.sii.cl/valores_y_fechas/mepco/mepco${y}.htm`, '_blank');
     }
 
     function showEmpty(msg) {
