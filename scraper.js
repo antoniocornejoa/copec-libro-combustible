@@ -255,7 +255,11 @@ async function main() {
           fechaConsulta: range.end,
           posicionInicial: 0
         }, tokens);
-        if (facResponse.data && facResponse.data.facturas) facturas = facResponse.data.facturas;
+        // OJO: el endpoint de facturas devuelve la lista bajo la llave
+        // "transacciones" (no "facturas"). Buscar "facturas" era el motivo de
+        // que siempre viniera 0. Verificado contra la API el 2026-07-15.
+        if (facResponse.data && facResponse.data.transacciones) facturas = facResponse.data.transacciones;
+        else if (facResponse.data && facResponse.data.facturas) facturas = facResponse.data.facturas;
         else if (Array.isArray(facResponse)) facturas = facResponse;
         else if (facResponse.data && Array.isArray(facResponse.data)) facturas = facResponse.data;
         else if (facResponse.facturas) facturas = facResponse.facturas;

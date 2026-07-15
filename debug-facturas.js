@@ -70,32 +70,61 @@ async function main() {
 
   console.log(`Mes: ${mes}  rango: ${r.start} -> ${r.end}\n`);
 
-  // Variantes de parametros a probar
-  const intentos = [
-    { nombre: 'A: params actuales del scraper',
-      body: { cuentaId, fechaConsultaInicio: r.start, fechaConsulta: r.end, posicionInicial: 0 } },
-    { nombre: 'B: sin posicionInicial',
-      body: { cuentaId, fechaConsultaInicio: r.start, fechaConsulta: r.end } },
-    { nombre: 'C: fechaInicio/fechaFin',
-      body: { cuentaId, fechaInicio: r.start, fechaFin: r.end, posicionInicial: 0 } },
-    { nombre: 'D: rango amplio (todo el ano)',
-      body: { cuentaId, fechaConsultaInicio: '2026-01-01', fechaConsulta: '2026-12-31', posicionInicial: 0 } },
-    { nombre: 'E: solo cuentaId',
-      body: { cuentaId } },
-  ];
+  // La API devuelve las facturas bajo data.transacciones (no data.facturas)
+  const res = await apiCall('cuenta/consultarfacturas', {
+    cuentaId, fechaConsultaInicio: r.start, fechaConsulta: r.end, posicionInicial: 0
+  }, tokens);
+  console.log('HTTP:', res.status);
 
-  for (const it of intentos) {
-    console.log('='.repeat(60));
-    console.log(it.nombre);
-    console.log('  params enviados:', Object.keys(it.body).join(', '));
-    try {
-      const res = await apiCall('cuenta/consultarfacturas', it.body, tokens);
-      console.log('  HTTP:', res.status);
-      console.log('  FORMA:', JSON.stringify(shape(res.data), null, 2).split('\n').join('\n  '));
-    } catch (e) {
-      console.log('  ERROR:', e.message);
+  const lista = (res.data && res.data.data && res.data.data.transacciones) || [];
+  console.log('Facturas encontradas:', lista.length, '\n');
+  if (!lista.length) return;
+
+  for (const f of lista) {
+    const url = f.facturaUrl;
+    if (!url) { console.log('  (sin facturaUrl)'); continue; }
+
+    // Bajar el PDF y extraer SOLO los totales tributarios del RESUMEN.
+    // No se imprime URL, RUT, direccion ni folios: el repo es publico.
+    const pdfRes = await fetch(url);
+    console.log('  PDF HTTP:', pdfRes.status, '| bytes:', pdfRes.headers.get('content-length') || '?');
+    if (!pdfRes.ok) continue;
+
+    const buf = Buffer.from(await pdfRes.arrayBuffer());
+    const zlib = require('zlib');
+    let raw = '';
+    let i = 0;
+    while (true) {
+      const s = buf.indexOf('stream', i);
+      if (s < 0) break;
+      let a = s + 6;
+      if (buf[a] === 13) a++;
+      if (buf[a] === 10) a++;
+      const e = buf.indexOf('endstream', a);
+      if (e < 0) break;
+      try { raw += zlib.inflateSync(buf.slice(a, e)).toString('latin1') + '\n'; } catch (_) {}
+      i = e + 9;
     }
-    await new Promise(r => setTimeout(r, 500));
+    const txt = [];
+    const re = /\((?:\\.|[^()\\])*\)/g;
+    let m;
+    while ((m = re.exec(raw)) !== null) {
+      let s = m[0].slice(1, -1);
+      s = s.replace(/\\(\d{3})/g, (_, o) => String.fromCharCode(parseInt(o, 8)));
+      s = s.replace(/\\([()\\])/g, '$1');
+      if (s.trim()) txt.push(s);
+    }
+    const joined = txt.join(' ').replace(/\s+/g, ' ');
+
+    // Detalle IEF/IEV por linea (cantidad + tasas) y el RESUMEN de totales
+    const det = joined.match(/(PETROLEO DIESEL|GASOLINA)[^A-Z]{0,60}?([\d.]+,\d+)\s+([\d.]+)\s+([\d.]+)\s+(\d{2}-\s?\w{3})/g);
+    if (det) { console.log('  --- lineas IEF/IEV ---'); det.forEach(d => console.log('   ', d.replace(/\s+/g, ' '))); }
+
+    const resu = /RESUMEN(.{0,220})/.exec(joined);
+    if (resu) console.log('  --- RESUMEN ---\n   ', resu[1].trim());
+
+    const ie = /IETotales Positivos:(.{0,220})/.exec(joined);
+    if (ie) console.log('  --- IE TOTALES ---\n   ', ie[1].trim());
   }
 }
 
