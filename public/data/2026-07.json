@@ -34,7 +34,7 @@
       "nombreEstacion": "AV CALLE 5 NORTE N 3510",
       "sucursal": "Estacion 20473",
       "direccion": "AV CALLE 5 NORTE N 3510",
-      "urlDocumento": "Documento no disponible.",
+      "urlDocumento": "http://copec2607.acepta.com/v01/4232A52B711BF999F152041F169E7564836C5C09?k=c3a180d7b6007cb7907f95652e432cc7",
       "urlAcepta": "",
       "odometro": 1,
       "medioDePago": "SALDO PREPAGO",
@@ -69,7 +69,7 @@
       "nombreEstacion": "AV CALLE 5 NORTE N 3510",
       "sucursal": "Estacion 20473",
       "direccion": "AV CALLE 5 NORTE N 3510",
-      "urlDocumento": "Documento no disponible.",
+      "urlDocumento": "http://copec2607.acepta.com/v01/BE870113FFF8CFCC51CDDE19030B52BB23A85A80?k=99fc840e11824cabaa00b575f4a93e32",
       "urlAcepta": "",
       "odometro": 48976,
       "medioDePago": "SALDO PREPAGO",
@@ -4270,5 +4270,5 @@
       "facturaFechaVencimiento": "2026-07-01 00:00:00.000000"
     }
   ],
-  "extractedAt": "2026-07-20T21:01:34.280Z"
+  "extractedAt": "2026-07-20T21:56:17.679Z"
 }
