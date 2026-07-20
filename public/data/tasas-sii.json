@@ -2,7 +2,7 @@
   "fuente": "SII - Impuesto al petroleo (componentes base y variable) + UTM",
   "unidad": "UTM/m3 (resultante). $/litro = resultante * UTM(mes) / 1000",
   "nota": "Resultante negativo = credito fiscal. Bluemax es aditivo (AdBlue), no lleva impuesto.",
-  "generatedAt": "2026-07-16T21:57:19.551Z",
+  "generatedAt": "2026-07-20T21:01:35.642Z",
   "utm": {
     "2026-01": 69751,
     "2026-02": 69611,
@@ -14,6 +14,12 @@
     "2026-08": 71649
   },
   "semanas": [
+    {
+      "desde": "2026-07-16",
+      "gas93": 5.0773,
+      "gas97": 5.0648,
+      "diesel": 0.5878
+    },
     {
       "desde": "2026-07-09",
       "gas93": 5.7351,
