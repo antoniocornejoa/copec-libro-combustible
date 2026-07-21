@@ -7,6 +7,41 @@
   },
   "transactions": [
     {
+      "fecha": "2026-07-21 12:27:32.000000",
+      "fechaTransaccion": "2026-07-21T12:30:33",
+      "factura": "41585504",
+      "nroDocumento": "41585504",
+      "folioDocumento": "41585504",
+      "litros": 223.151,
+      "cantidad": 223.151,
+      "precio": 1169,
+      "precioUnitario": 1169,
+      "tipoCombustible": "Diesel",
+      "combustible": "Diesel",
+      "tipo": "Diesel",
+      "montoNeto": 219213,
+      "monto": 260864,
+      "montoTotal": 260864,
+      "iva": 41651,
+      "impEsp": 0,
+      "destino": "",
+      "destinoEmp": "",
+      "tipoDocumento": "Guia de despacho",
+      "conductor": "FRANCISCO JAVIER GONZALEZ GONZALEZ",
+      "nombreConductor": "FRANCISCO JAVIER GONZALEZ GONZALEZ",
+      "patente": "SLCW74",
+      "estacion": "Estacion 20236",
+      "nombreEstacion": "BALMACEDA ESQUINA CHORRILLOS SIN NUMERO",
+      "sucursal": "Estacion 20236",
+      "direccion": "BALMACEDA ESQUINA CHORRILLOS SIN NUMERO",
+      "urlDocumento": "http://copec2607.acepta.com/v01/CED58466F758C020BDF9641942D4EFECEC4ABF1E?k=646e15ff3ea3f7c5fdf8e65961926291",
+      "urlAcepta": "",
+      "odometro": 138935,
+      "medioDePago": "SALDO PREPAGO",
+      "ventaId": 12734963,
+      "cuentaId": 160888
+    },
+    {
       "fecha": "2026-07-20 16:38:50.000000",
       "fechaTransaccion": "2026-07-20T16:40:57",
       "factura": "41675434",
@@ -4270,5 +4305,5 @@
       "facturaFechaVencimiento": "2026-07-01 00:00:00.000000"
     }
   ],
-  "extractedAt": "2026-07-20T21:56:17.679Z"
+  "extractedAt": "2026-07-21T21:57:09.985Z"
 }
